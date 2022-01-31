@@ -2114,9 +2114,9 @@ const struct settings_list settings[] = {
     INT_SETTING(F_TIME_SETTING, sleeptimer_duration, LANG_SLEEP_TIMER_DURATION,
                 30, "sleeptimer duration", UNIT_MIN, 5, 300, 5,
                 NULL, NULL, NULL),
-    OFFON_SETTING(0, sleeptimer_on_startup, LANG_SLEEP_TIMER_ON_POWER_UP, false,
+    OFFON_SETTING(0, sleeptimer_on_startup, LANG_SLEEP_TIMER_ON_POWER_UP, true,
                   "sleeptimer on startup", NULL),
-    OFFON_SETTING(0, keypress_restarts_sleeptimer, LANG_KEYPRESS_RESTARTS_SLEEP_TIMER, false,
+    OFFON_SETTING(0, keypress_restarts_sleeptimer, LANG_KEYPRESS_RESTARTS_SLEEP_TIMER, true,
                   "keypress restarts sleeptimer", set_keypress_restarts_sleep_timer),
 
     OFFON_SETTING(0, show_shutdown_message, LANG_SHOW_SHUTDOWN_MESSAGE, true,
