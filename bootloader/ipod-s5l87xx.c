@@ -660,13 +660,13 @@ void main(void)
         filesystem_init();
 
         /* We wait until HDD spins up to check for hold button */
-        if (button_hold()) {
+        /*if (button_hold()) {
             printf("Executing OF...");
 #if (CONFIG_STORAGE & STORAGE_ATA)
             ata_sleepnow();
 #endif
             rc = kernel_launch_onb();
-        }
+        }*/
     }
 
     if (rc != 0) {
