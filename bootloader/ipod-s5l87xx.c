@@ -189,6 +189,8 @@ static void battery_trap(void)
 
     usb_charging_maxcurrent_change(100);
 
+    int backlight_on = true;
+
     while (1)
     {
         vbat = _battery_voltage();
@@ -209,6 +211,18 @@ static void battery_trap(void)
         if (power_input_status() != POWER_INPUT_NONE) {
             lcd_set_foreground(LCD_RBYELLOW);
             printf("Low battery: %d mV, charging...     ", vbat);
+            if (button_hold()) {
+                if (backlight_on) {
+                    backlight_on = false;
+                    backlight_hw_off(); // Turn the backlight OFF when charging if the hold switch is ON.
+                }
+            }
+            else {
+                if (!backlight_on) {
+                    backlight_on = true;
+                    backlight_hw_on(); // Turn the backlight ON when charging if the hold switch is OFF.
+                }
+            }
             sleep(HZ*3);
         }
         else {
