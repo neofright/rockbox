@@ -186,6 +186,7 @@ static void battery_trap(void)
 {
     int vbat, old_verb;
     int th = 50;
+    bool backlight_on = true;
 
     old_verb = verbose;
     verbose = true;
@@ -212,6 +213,20 @@ static void battery_trap(void)
         if (power_input_status() != POWER_INPUT_NONE) {
             lcd_set_foreground(LCD_RBYELLOW);
             printf("Low battery: %d mV, charging...     ", vbat);
+            if (button_hold()) {
+                if (backlight_on) {
+                    backlight_on = false;
+                    backlight_hw_off(); /* Turn the backlight OFF when charging if the hold switch is ON. */
+                    lcd_sleep();
+                }
+            }
+            else {
+                if (!backlight_on) {
+                    backlight_on = true;
+                    lcd_awake();
+                    backlight_hw_on(); /* Turn the backlight ON when charging if the hold switch is OFF. */
+                }
+            }
             sleep(HZ*3);
         }
         else {
