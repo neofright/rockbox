@@ -233,3 +233,55 @@ list separator color: 808080
 </main>
 
 </theme>
+
+<theme>
+Name: iPod-reFresh-four
+Authors: dr3am.r, v1.0, January 2022
+WPS: yes
+FMS: no
+RWPS: yes
+SBS: yes
+RSBS: no
+
+<main>
+
+# override implicit .wps filename
+wps.320x240x(16|24|32):  iPod-reFresh-four.wps
+
+# Preferred font (including .fnt extension - leave blank for player):
+Font.320x240x(16|24): 16-SF-Pro-Rounded-Semibold.fnt
+
+#misc settings that should be ignored on grayscale targets
+foreground color: ffffff
+background color: 000000
+line selector start color: 2592aa
+# line selector end color: 5A3010
+line selector text color: ffffff
+filetype colours: -
+
+#backdrop - remember this is the source file name in your SVN folder, not dest name!
+# backdrop.320x240x(16|24): backdrops/naranjada.bmp
+
+#selection bar settings for color targets
+# selector type..+x16: bar (gradient)
+# selector type..+x2: bar (inverse)
+selector type: bar (color)
+
+#icons
+iconset.320x240x(16|24|32):  icons/iPod-reFresh.bmp
+
+#viewer icons
+viewers iconset.320x240x(16|24):  icons/iPod-reFresh_viewers.bmp
+
+show icons: on
+scrollbar: on
+statusbar: off
+ui viewport: -
+# Touchscreen: whether to show line separators or not. Default to yes only on touchscreen targets.
+list separator height: 0
+list separator height..+&touchscreen: auto
+list separator color: 808080
+
+</main>
+
+</theme>
