@@ -875,10 +875,10 @@ long gui_wps_show(void)
                     {
                         audio_next();
                     }
-                    else
-                    {
-                        change_dir(1);
-                    }
+                    // else
+                    // {
+                    //     change_dir(1);
+                    // }
                 }
                 else
                     ffwd_rew(ACTION_WPS_SEEKFWD, false);
@@ -893,10 +893,10 @@ long gui_wps_show(void)
                     {
                         audio_prev();
                     }
-                    else
-                    {
-                        change_dir(-1);
-                    }
+                    // else
+                    // {
+                    //     change_dir(-1);
+                    // }
                 } else if (global_settings.rewind_across_tracks
                            && get_wps_state()->id3->elapsed < DEFAULT_SKIP_THRESH
                            && playlist_check(-1))
