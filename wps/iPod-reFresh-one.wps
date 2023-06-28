@@ -40,11 +40,6 @@
 %xl(M,shuffle.bmp,0,0)
 %xl(N,repeat.bmp,0,0,4)
 %xl(O,hold.bmp,0,0)
-%xl(P,lossless.bmp,0,0)
-%xl(w,cornerTL.bmp,0,0)
-%xl(x,cornerTR.bmp,122,0)
-%xl(y,cornerBL.bmp,0,122)
-%xl(z,cornerBR.bmp,122,122)
 #
 ##############
 # STATUS BAR #
@@ -83,31 +78,36 @@
 %Cl(0,0,136,136)
 # Album Art
 %V(13,30,136,136,-)
-#%?C<%Cd>
-#
-#-- Album art round corners
-%?mh<%Cd%?C<%xd(w)%xd(x)%xd(y)%xd(z)|>|%Cd%?C<%xd(w)%xd(x)%xd(y)%xd(z)|>> #refresh art on Hold
+%?C<%Cd>
 #
 #-- Title
-%V(163,60,144,30,8)%Vf(ffffff)
+%V(163,25,144,30,8)%Vf(ffffff)
 %al%s%?it<%s%it|%fn>
 #
 #-- Artist
-%V(163,90,144,25,7)%Vf(ffffff)
+%V(163,55,144,25,7)%Vf(ffffff)
 %al%s%?ia<%ia|%?d(2)<%d(2)|%Sx(Artist)>>
 #
-#-- Lossless
-# determine if 'lossless', aiff=4, wave=5, flac=7, alac=11, shorten=13
-%?or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11),%if(%fc, =, 13))<%Vd(lossless)>
-#-- Lossless Indicator Image
-%Vl(lossless,162,126,63,17,-)
-%Vb(fffffff)
-%xd(P)
+#-- Album
+%V(163,75,144,25,7)%Vf(ffffff)
+%al%s%?id<%id|%?d(1)<%d(1)|%Sx(Album)>>
+#
+#-- Year
+%V(163,95,144,25,7)%Vf(ffffff)
+%ss(0, 4, %iy)
+#%iy
 #
 #-- File details
-%V(163,145,144,18,5)%Vf(ffffff)
-%fc, %fbkbps %fkkhz
+%V(163,121,144,18,5)%Vf(ffffff)
+%fc, %?fv<~|>%fbkbps %fkkhz
 #
+#-- Replaygain
+%V(163,136,144,18,5)%Vf(ffffff)
+%?if(%St(replaygain type), !=, off)<%?rg<|Track|Album|TrackShuffle|AlbumShuffle|No> RG %rg|RG Off>
+#
+#-- Playlist information
+%V(163,151,144,18,5)%Vf(ffffff)
+%s%al%pp %Sx(of) %pe%?pn<  "%pn"|>
 #-- Progress Bar
 # With a little hacking to make border look nice
 %V(13,181,294,5,0)
