@@ -40,10 +40,6 @@
 %xl(M,shuffle.bmp,0,0)
 %xl(N,repeat.bmp,0,0,4)
 %xl(O,hold.bmp,0,0)
-%xl(w,cornerTL.bmp,0,0)
-%xl(x,cornerTR.bmp,122,0)
-%xl(y,cornerBL.bmp,0,122)
-%xl(z,cornerBR.bmp,122,122)
 #
 ##############
 # STATUS BAR #
