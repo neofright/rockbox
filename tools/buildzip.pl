@@ -383,6 +383,9 @@ sub buildzip {
         copy("$ROOT/fonts/COPYING", "COPYING-fonts.txt");
         chdir("../../");
 
+        # Copy pre-compiled .fnt files without conversion.
+        system("cp ${ROOT}/fonts/*fnt ${temp_dir}/fonts/");
+
         if($fonts < 2) {
           # fonts-only package, return
           return;
