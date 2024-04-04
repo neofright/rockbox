@@ -228,3 +228,54 @@ ui viewport: -
 </remote>
 
 </theme>
+
+<theme>
+Name: naranjada
+# Real name of the creator of the WPS
+Authors: Simon Rothen (rothen@gmx.net)
+WPS: yes
+FMS: no
+RWPS: yes
+SBS: yes
+RSBS: no
+
+<main>
+
+# override implicit .wps filename
+wps.320x240x(16|24|32):  naranjada.wps
+
+# Preferred font (including .fnt extension - leave blank for player):
+Font.320x240x(16|24): 16-Roboto-Bold.fnt
+
+#misc settings that should be ignored on grayscale targets
+foreground color: B6B5B6
+background color: 2D2F2D
+line selector start color: db7e30
+line selector end color: 5A3010
+line selector text color: e7e7e7
+filetype colours: -
+
+#backdrop - remember this is the source file name in your SVN folder, not dest name!
+backdrop.320x240x(16|24): backdrops/naranjada.bmp
+
+#selection bar settings for color targets
+selector type..+x16: bar (gradient)
+selector type..+x2: bar (inverse)
+
+#icons
+iconset.320x240x(16|24|32):  icons/naranjada.bmp
+
+#viewer icons
+viewers iconset.320x240x(16|24):  icons/naranjada_viewers.bmp
+
+show icons: on
+statusbar: custom
+ui viewport: 93,38,222,140,-,-,-
+# Touchscreen: whether to show line separators or not. Default to yes only on touchscreen targets.
+list separator height: 0
+list separator height..+&touchscreen: auto
+list separator color: 808080
+
+</main>
+
+</theme>
