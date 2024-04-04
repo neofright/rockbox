@@ -228,9 +228,9 @@ static const int backlight_fade[] = {0,100,200,300,500,1000,2000,3000,5000,10000
 static const char graphic_numeric[] = "graphic,numeric";
 
 /* Default theme settings */
-#define DEFAULT_WPSNAME  "cabbiev2"
-#define DEFAULT_SBSNAME  "-"
-#define DEFAULT_FMS_NAME "cabbiev2"
+#define DEFAULT_WPSNAME  "naranjada"
+#define DEFAULT_SBSNAME  "naranjada"
+#define DEFAULT_FMS_NAME "naranjada"
 
 #if LCD_HEIGHT <= 64
   #define DEFAULT_FONT_HEIGHT 8
@@ -245,7 +245,7 @@ static const char graphic_numeric[] = "graphic,numeric";
 #elif LCD_HEIGHT <= 220
   #define DEFAULT_FONT_HEIGHT 12
 #elif LCD_HEIGHT <= 240
-  #define DEFAULT_FONT_HEIGHT 15
+  #define DEFAULT_FONT_HEIGHT 16
 #elif LCD_HEIGHT <= 320
   #define DEFAULT_FONT_HEIGHT 18
 #elif defined(SHANLING_Q1)
@@ -266,7 +266,7 @@ static const char graphic_numeric[] = "graphic,numeric";
 /* ugly expansion needed */
 #define _EXPAND2(x) #x
 #define _EXPAND(x) _EXPAND2(x)
-#define DEFAULT_FONTNAME _EXPAND(DEFAULT_FONT_HEIGHT) "-Adobe-Helvetica"
+#define DEFAULT_FONTNAME _EXPAND(DEFAULT_FONT_HEIGHT) "-Roboto-Bold"
 #endif
 
 #ifdef HAVE_LCD_COLOR
@@ -277,8 +277,8 @@ static const char graphic_numeric[] = "graphic,numeric";
     #define DEFAULT_ICONSET "tango_icons.24x24"
     #define DEFAULT_VIEWERS_ICONSET "tango_icons_viewers.24x24"
   #elif DEFAULT_FONT_HEIGHT >= 15
-    #define DEFAULT_ICONSET "tango_icons.16x16"
-    #define DEFAULT_VIEWERS_ICONSET "tango_icons_viewers.16x16"
+    #define DEFAULT_ICONSET "naranjada"
+    #define DEFAULT_VIEWERS_ICONSET "naranjada"
   #elif DEFAULT_FONT_HEIGHT >= 11
     #define DEFAULT_ICONSET "tango_icons.12x12"
     #define DEFAULT_VIEWERS_ICONSET "tango_icons_viewers.12x12"
@@ -302,14 +302,14 @@ static const char graphic_numeric[] = "graphic,numeric";
 #endif
 #endif /* HAVE_REMOTE_LCD */
 
-#define DEFAULT_THEME_FOREGROUND LCD_RGBPACK(0xce, 0xcf, 0xce)
-#define DEFAULT_THEME_BACKGROUND LCD_RGBPACK(0x00, 0x00, 0x00)
-#define DEFAULT_THEME_SELECTOR_START LCD_RGBPACK(0xff, 0xeb, 0x9c)
-#define DEFAULT_THEME_SELECTOR_END LCD_RGBPACK(0xb5, 0x8e, 0x00)
-#define DEFAULT_THEME_SELECTOR_TEXT LCD_RGBPACK(0x00, 0x00, 0x00)
-#define DEFAULT_THEME_SEPARATOR  LCD_RGBPACK(0x80, 0x80, 0x80)
+#define DEFAULT_THEME_FOREGROUND LCD_RGBPACK(0xb6, 0xb5, 0xb6)
+#define DEFAULT_THEME_BACKGROUND LCD_RGBPACK(0x2d, 0x2f, 0x2d)
+#define DEFAULT_THEME_SELECTOR_START LCD_RGBPACK(0xdb, 0x7e, 0x30)
+#define DEFAULT_THEME_SELECTOR_END LCD_RGBPACK(0x5a, 0x30, 0x10)
+#define DEFAULT_THEME_SELECTOR_TEXT LCD_RGBPACK(0xe7, 0xe7, 0xe7)
+#define DEFAULT_THEME_SEPARATOR  LCD_RGBPACK(0x84, 0x82, 0x84)
 
-#define DEFAULT_BACKDROP    BACKDROP_DIR "/cabbiev2.bmp"
+#define DEFAULT_BACKDROP    BACKDROP_DIR "/naranjada.bmp"
 
 #ifdef HAVE_RECORDING
 /* these should be in the config.h files */

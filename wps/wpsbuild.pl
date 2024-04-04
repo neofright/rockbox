@@ -176,12 +176,21 @@ sub copybackdrop
 
 sub copythemefont
 {
+    my ($font) = @_;
     #copy the font specified by the theme
-    my $o = $_[0];
 
-    $o =~ s/\.fnt/\.bdf/;
     mkdir "$tempdir/fonts";
-    system("$ROOT/tools/convbdf -f -o \"$tempdir/fonts/$_[0]\" \"$ROOT/fonts/$o\" ");
+    if (-e "${ROOT}/fonts/${font}")
+    {
+        #if 'font_foo.fnt' already exists, no need to convert 'font_foo.bdf' to '.fnt'
+        #just copy it to the final directory.
+        system("cp ${ROOT}/fonts/${font} ${tempdir}/fonts/${font}");
+    }
+    else
+    {
+        my $o =~ s/\.fnt/\.bdf/;
+        system("$ROOT/tools/convbdf -f -o \"$tempdir/fonts/$_[0]\" \"$ROOT/fonts/$o\" ");
+    }
 }
 
 sub copythemeicon
