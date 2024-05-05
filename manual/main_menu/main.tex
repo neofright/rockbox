@@ -53,10 +53,9 @@ If the \setting{Save a list of recently created bookmarks} option is enabled
 then you can view a list of several recent bookmarks here and select one to 
 jump straight to that track.\\*
 
- \note{Bookmarking only works when tracks are launched from the file browser,
-        and does not currently work for tracks launched via the
-        database. In addition, they do not currently work with dynamic
-        playlists.\\*} 
+ \note{A track launched from the file browser can be bookmarked as is. If
+       tracks are launched via the database, or the current playlist has been modified,
+       creating a bookmark requires that you save the playlist first.\\*} 
 
   \begin{btnmap}
     \ActionStdNext
@@ -178,8 +177,10 @@ will be saved in the Playlist Catalogue directory.
 
 \item[Save Current Playlist:]
   Saves the current dynamic playlist, excluding queued tracks, to the
-specified file. If no path is provided then playlist is saved to the current
-directory.
+specified file. Asks for confirmation whether to remove queued tracks
+from the current playlist, so that bookmarks can be created
+(see \reference{ref:createbookmark}).
+If no path is provided then playlist is saved to the current directory.
 
 \item[Reset Playlist Catalogue Directory:]
   Will reset the default location for playlists to the \fname{/Playlists}
@@ -283,7 +284,7 @@ settings. With a shortcut,
         a \fname{.cfg} loaded)
   \item The file browser can be opened with the cursor positioned at
         a specified file or folder
-  \item A file's or folder's ``Current Playlist'' context menu item can
+  \item A file's or folder's ``Playing Next...'' context menu item can
         be displayed
   \item A setting can be configured (any which can be added to the
         \setting{Quick Screen})
@@ -306,7 +307,7 @@ each item to be displayed. Each shortcut looks like the following:
     data: <what the shortcut actually links to>
     name: <what the shortcut should be displayed as>
     icon: <number of the theme icon to use (see \wikilink{CustomIcons})>
-    talkclip: <filename of a talk clip to speak when voice menus are enabled>
+    talkclip: <full path to a talk clip to speak when voice menus are enabled> (example: \fname{/.rockbox/filename.talk})
 \end{example}
 
 Only ``type'' and ``data'' are required (except if type is ``separator'' in which case
@@ -317,7 +318,7 @@ Available types are:
 \item[file] \config{data} is the name of the file to ``run''
 \item[browse] \config{data} is the file or the folder to open the file browser at
 \item[playlist menu] \config{data} is the file or the folder to open the
-  ``Current Playlist'' context menu item on
+  ``Playing Next...'' context menu item on (see \reference{ref:playingnext_submenu})
 \item[setting] \config{data} is the config name of the setting you want to change
   (see \reference{ref:config_file_options} for the list of the possible settings)
 \item[debug] \config{data} is the name of the debug menu item to display

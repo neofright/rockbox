@@ -116,11 +116,16 @@ metronome.c
 /* Lua needs at least 160 KB to work in */
 #if PLUGIN_BUFFER_SIZE >= 0x80000
 boomshine.lua
+picross.lua
 lua_scripts.lua
 #ifdef HAVE_LCD_COLOR
 pixel-painter.lua
 #endif /* HAVE_LCD_COLOR */
 #endif /* PLUGIN_BUFFER_SIZE >= 0x80000 */
+
+#if PLUGIN_BUFFER_SIZE > 0x10000 /* Doesn't fit on most 2Mb targets */
+amaze.c
+#endif
 
 rockblox1d.c
 brickmania.c

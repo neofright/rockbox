@@ -19,7 +19,7 @@ use strict;
 use warnings;
 use File::Basename;
 use File::Copy;
-use vars qw($V $C $t $l $e $E $s $S $i $v $f);
+use vars qw($V $C $t $l $e $E $s $S $i $v $f $F);
 use IPC::Open2;
 use IPC::Open3;
 use Digest::MD5 qw(md5_hex);
@@ -42,7 +42,8 @@ Usage: voice.pl [options] [path to dir]
     Specify which target you want to build voicefile for. Must include
     any features that target supports.
 
- -f=<file> Use existing voiceids file
+ -f=<file>
+    Use existing voiceids file
 
  -i=<target_id>
     Numeric target id. Needed for voice building.
@@ -64,6 +65,9 @@ Usage: voice.pl [options] [path to dir]
     Options to pass to the TTS engine. Enclose in double quotes if the
     options include spaces.
 
+ -F
+    Force the file to be regenerated even if present
+
  -v
     Be verbose
 USAGE
@@ -71,58 +75,82 @@ USAGE
 }
 
 my %festival_lang_map = (
-                           'english' => 'english',
-			   'english-us' => 'english',
-			   'espanol' => 'spanish',
-			  #'finnish' => 'finnish'
-			  #'italiano' => 'italian',
-                          #'czech' => 'czech',
-			  #'welsh' => 'welsh'
+    'english' => 'english',
+    'english-us' => 'english',
+    'espanol' => 'spanish',
+    #'finnish' => 'finnish'
+    #'italiano' => 'italian',
+    #'czech' => 'czech',
+    #'welsh' => 'welsh'
 );
 
 my %gtts_lang_map = (
     'english' => '-l en -t co.uk',  # Always first, it's the golden master
-	'czech' => '-l cs',   # not supported
-	'dansk' => '-l da',
-	'deutsch' => '-l de',
-	'english-us' => '-l en -t us',
-	'espanol' => '-l es',
-	'francais' => '-l fr',
-	'greek' => '-l el',
-	'magyar' => '-l hu',
-	'italiano' => '-l it',
-	'nederlands' => '-l nl',
-	'norsk' => '-l no',
-	'polski' => '-l pl',
-	'russian' => '-l ru',
-	'slovak' => '-l sk',
-	'srpski' => '-l sr',
-	'svenska' => '-l sv',
-	'turkce' => '-l tr',
+    'czech' => '-l cs',
+    'dansk' => '-l da',
+    'deutsch' => '-l de',
+    'english-us' => '-l en -t us',
+    'espanol' => '-l es',
+    'francais' => '-l fr',
+    'greek' => '-l el',
+    'magyar' => '-l hu',
+    'italiano' => '-l it',
+    'nederlands' => '-l nl',
+    'norsk' => '-l no',
+    'polski' => '-l pl',
+    'russian' => '-l ru',
+    'slovak' => '-l sk',
+    'srpski' => '-l sr',
+    'svenska' => '-l sv',
+    'turkce' => '-l tr',
 );
 
 my %espeak_lang_map = (
-    'english' => 'en-gb',  # Always first, it's the golden master
-	'czech' => 'cs',
-	'dansk' => 'da',
-	'deutsch' => 'de',
-        'english-us' => 'en-us',
-	'espanol' => 'es',
-	'francais' => 'fr-fr',
-	'greek' => 'el',
-        'nederlands' => 'nl',
-        'magyar' => 'hu',
-        'italiano' => 'it',
-        'japanese' => 'ja',
-        'nederlands' => 'nl',
-        'norsk' => 'no',
-        'polski' => 'pl',
-        'russian' => 'ru',
-        'slovak' => 'sk',
-        'srpski' => 'sr',
-        'svenska' => 'sv',
-        'turkce' => 'tr',
+    'english' => '-ven-gb -k 5',  # Always first, it's the golden master
+    'czech' => '-vcs',
+    'dansk' => '-vda',
+    'deutsch' => '-vde',
+    'english-us' => '-ven-us -k 5',
+    'espanol' => '-ves',
+    'francais' => '-vfr-fr',
+    'greek' => '-vel',
+    'magyar' => '-vhu',
+    'italiano' => '-vit',
+    'japanese' => '-vja',
+    'nederlands' => '-vnl',
+    'norsk' => '-vno',
+    'polski' => '-vpl',
+    'russian' => '-vru',
+    'slovak' => '-vsk',
+    'srpski' => '-vsr',
+    'svenska' => '-vsv',
+    'turkce' => '-vtr',
+    );
+
+my %piper_lang_map = (
+    'english' => 'en_GB-cori-high.onnx',  # Always first, it's the golden master
+    'czech' => 'cs_CZ-jirka-medium.onnx',
+    'dansk' => 'da_DK-talesyntese-medium.onnx',
+    'deutsch' => 'de_DE-thorsten-high.onnx',
+    'english-us' => 'en_US-libritts-high.onnx',
+    'espanol' => 'es_ES-sharvard-medium.onnx',
+    'francais' => 'fr_FR-siwis-medium.onnx',
+    'greek' => 'el_GR-rapunzelina-low.onnx',
+#    'magyar' => '-vhu',
+    'italiano' => 'it_IT-riccardo-x_low.onnx',
+#    'japanese' => '-vja',
+    'nederlands' => 'nl_NL-mls-medium.onnx',
+    'norsk' => 'no_NO-talesyntese-medium.onnx',
+    'polski' => 'pl_PL-gosia-medium.onnx',
+    'russian' => 'ru_RU-irina-medium.onnx',
+    'slovak' => 'sk_SK-lili-medium.onnx',
+    'srpski' => 'sr_RS-serbski_institut-medium.onnx',
+    'svenska' => 'sv_SE-nst-medium.onnx',
+    'turkce' => 'tr_TR-fettah-medium.onnx',
 );
+
+my $trim_thresh = 500;   # Trim silence if over this, in ms
+my $force = 0;           # Don't regenerate files already present
 
 # Initialize TTS engine. May return an object or value which will be passed
 # to voicestring and shutdown_tts
@@ -136,6 +164,7 @@ sub init_tts {
     # Don't use given/when here - it's not compatible with old perl versions
     if ($tts_engine eq 'festival') {
         print("> festival $tts_engine_opts --server\n") if $verbose;
+        # Open command, and filehandles for STDIN, STDOUT, STDERR
         my $pid = open(FESTIVAL_SERVER, "| festival $tts_engine_opts --server > /dev/null 2>&1");
         my $dummy = *FESTIVAL_SERVER; #suppress warning
         $SIG{INT} = sub { kill TERM => $pid; print("foo"); panic_cleanup(); };
@@ -143,6 +172,21 @@ sub init_tts {
         $ret{"pid"} = $pid;
         if (defined($festival_lang_map{$language}) && $tts_engine_opts !~ /--language/) {
             $ret{"ttsoptions"} = "--language $festival_lang_map{$language} ";
+        }
+    } elsif ($tts_engine eq 'piper') {
+	my $cmd = "piper $tts_engine_opts --json-input";
+        print("> $cmd\n") if $verbose;
+
+        my $pid = open3(*CMD_IN, *CMD_OUT, *CMD_ERR, $cmd);
+        $SIG{INT} = sub { kill TERM => $pid; print("foo"); panic_cleanup(); };
+        $SIG{KILL} = sub { kill TERM => $pid; print("boo"); panic_cleanup(); };
+        $ret{"pid"} = $pid;
+        binmode(*CMD_IN, ':encoding(utf8)');
+        binmode(*CMD_OUT, ':encoding(utf8)');
+        binmode(*CMD_ERR, ':encoding(utf8)');
+	if (defined($piper_lang_map{$language}) && $tts_engine_opts !~ /--model/) {
+	    die("Need PIPER_MODEL_DIR\n") if (!defined($ENV{'PIPER_MODEL_DIR'}));
+            $ret{"ttsoptions"} = "--model $ENV{PIPER_MODEL_DIR}/$piper_lang_map{$language} ";
         }
     } elsif ($tts_engine eq 'sapi') {
         my $toolsdir = dirname($0);
@@ -171,7 +215,7 @@ sub init_tts {
         }
     } elsif ($tts_engine eq 'espeak' || $tts_engine eq 'espeak-ng') {
         if (defined($espeak_lang_map{$language}) && $tts_engine_opts !~ /-v/) {
-            $ret{"ttsoptions"} = "-v$espeak_lang_map{$language} ";
+            $ret{"ttsoptions"} = " $espeak_lang_map{$language} ";
         }
     }
 
@@ -183,6 +227,10 @@ sub shutdown_tts {
     my ($tts_object) = @_;
     if ($$tts_object{'name'} eq 'festival') {
         # Send SIGTERM to festival server
+        kill TERM => $$tts_object{"pid"};
+    }
+    elsif ($$tts_object{'name'} eq 'piper') {
+        # Send SIGTERM to piper
         kill TERM => $$tts_object{"pid"};
     }
     elsif ($$tts_object{'name'} eq 'sapi') {
@@ -238,6 +286,13 @@ sub voicestring {
         }
         close(CMD_OUT);
         close(CMD_ERR);
+    }
+    elsif ($name eq 'piper') {
+	$cmd = "{ \"text\": \"$string\", \"output_file\": \"$output\" }";
+        print(">> $cmd\n") if $verbose;
+	print(CMD_IN "$cmd\n");
+	my $res = <CMD_OUT>;
+	$res = <CMD_ERR>;
     }
     elsif ($name eq 'flite') {
         $cmd = "flite $tts_engine_opts -t \"$string\" \"$output\"";
@@ -333,7 +388,7 @@ sub synchronize {
 # Run genlang and create voice clips for each string
 sub generateclips {
     our $verbose;
-    my ($language, $target, $encoder, $encoder_opts, $tts_engine, $tts_engine_opts, $existingids) = @_;
+    my ($language, $target, $encoder, $encoder_opts, $tts_object, $tts_engine_opts, $existingids) = @_;
     my $english = dirname($0) . '/../apps/lang/english.lang';
     my $langfile = dirname($0) . '/../apps/lang/' . $language . '.lang';
     my $correctionsfile = dirname($0) . '/voice-corrections.txt';
@@ -360,7 +415,6 @@ sub generateclips {
     }
     open(VOICEFONTIDS, " < $idfile");
 
-    my $tts_object = init_tts($tts_engine, $tts_engine_opts, $language);
     # add string corrections to tts_object.
     my @corrects = ();
     open(VOICEREGEXP, "<$correctionsfile") or die "Can't open corrections file!\n";
@@ -417,24 +471,24 @@ sub generateclips {
                 # If we have a pool of snippets, see if the string exists there first
                 if (defined($ENV{'POOL'})) {
                     $pool_file = sprintf("%s/%s-%s.enc", $ENV{'POOL'},
-                                         md5_hex(Encode::encode_utf8("$voice $tts_engine $tts_engine_opts $encoder_opts")),
+                                         md5_hex(Encode::encode_utf8("$voice ". $tts_object->{"name"}." $tts_engine_opts $encoder_opts")),
                                          $language);
                     if (-f $pool_file) {
                         printf("Re-using %s (%s) from pool\n", $id, $voice) if $verbose;
+                        system("touch $pool_file"); # So we know it's still being used.
                         copy($pool_file, $enc);
                     }
                 }
 
                 # Don't generate encoded file if it already exists (probably from the POOL)
-                if (! -f $enc) {
+                if (! -f $enc && !$force) {
                     if ($id eq "VOICE_PAUSE") {
                         print("Use distributed $wav\n") if $verbose;
                         copy(dirname($0)."/VOICE_PAUSE.wav", $wav);
                     } else {
 			voicestring($voice, $wav, $tts_engine_opts, $tts_object);
 			if ($format eq "wav") {
-			    wavtrim($wav, 500, $tts_object);
-			    # 500 seems to be a reasonable default for now
+			    wavtrim($wav, $trim_thresh, $tts_object);
 			}
                     }
 		    # Convert from mp3 to wav so we can use rbspeex
@@ -465,7 +519,6 @@ sub generateclips {
     print("\n");
 
     unlink($updfile) if (-f $updfile);
-    shutdown_tts($tts_object);
 }
 
 # Assemble the voicefile
@@ -510,6 +563,8 @@ sub gentalkclips {
     my $d = new DirHandle $dir;
     while (my $file = $d->read) {
         my ($voice, $wav, $enc);
+	my $format = $tts_object->{'format'};
+
         # Print some progress information
         if (++$i % 10 == 0 and !$verbose) {
             print(".");
@@ -527,8 +582,8 @@ sub gentalkclips {
         }
         # Element is a dir
         if ( -d $path) {
+	    $enc = sprintf("%s/_dirname.talk", $path);
             gentalkclips($path, $tts_object, $encoder, $encoder_opts, $tts_engine_opts, $i);
-            $enc = sprintf("%s/_dirname.talk", $path);
         }
         # Element is a file
         else {
@@ -537,19 +592,31 @@ sub gentalkclips {
         }
 
         printf("Talkclip %s: %s", $enc, $voice) if $verbose;
+	# Don't generate encoded file if it already exists
+	next if (-f $enc && !$force);
 
-        voicestring($voice, $wav, $tts_engine_opts, $tts_object);
-        wavtrim($wav, 500, $tts_object);
-        # 500 seems to be a reasonable default for now
-        encodewav($wav, $enc, $encoder, $encoder_opts, $tts_object);
-        synchronize($tts_object);
-        unlink($wav);
+	voicestring($voice, $wav, $tts_engine_opts, $tts_object);
+	wavtrim($wav, $trim_thresh, $tts_object);
+
+	if ($format eq "mp3") {
+	    system("ffmpeg -loglevel 0 -i $wav $voice$wav");
+	    rename("$voice$wav","$wav");
+	    $format = "wav";
+	}
+	if ($format eq "wav") {
+	    encodewav($wav, $enc, $encoder, $encoder_opts, $tts_object);
+	} else {
+	    copy($wav, $enc);
+	}
+	synchronize($tts_object);
+	unlink($wav);
     }
 }
 
 
 # Check parameters
 my $printusage = 0;
+
 unless (defined($V) or defined($C)) { print("Missing either -V or -C\n"); $printusage = 1; }
 if (defined($V)) {
     unless (defined($l)) { print("Missing -l argument\n"); $printusage = 1; }
@@ -562,6 +629,9 @@ if (defined($V)) {
 elsif (defined($C)) {
     unless (defined($ARGV[0])) { print "Missing path argument\n"; $printusage = 1; }
 }
+
+$force = 1 if (defined($F));
+
 unless (defined($e)) { print("Missing -e argument\n"); $printusage = 1; }
 unless (defined($E)) { print("Missing -E argument\n"); $printusage = 1; }
 unless (defined($s)) { print("Missing -s argument\n"); $printusage = 1; }
@@ -575,6 +645,8 @@ if (defined($v) or defined($ENV{'V'})) {
 # add the tools dir to the path temporarily, for calling various tools
 $ENV{'PATH'} = dirname($0) . ':' . $ENV{'PATH'};
 
+my $tts_object = init_tts($s, $S, $l);
+
 # Do what we're told
 if ($V == 1) {
     # Only do the panic cleanup for voicefiles
@@ -584,17 +656,15 @@ if ($V == 1) {
     printf("Generating voice\n  Target: %s\n  Language: %s\n  Encoder (options): %s (%s)\n  TTS Engine (options): %s (%s)\n",
            defined($t) ? $t : "unknown",
            $l, $e, $E, $s, $S);
-    generateclips($l, $t, $e, $E, $s, $S, $f);
+    generateclips($l, $t, $e, $E, $tts_object, $S, $f);
+    shutdown_tts($tts_object);
     createvoice($l, $i, $f);
     deleteencs();
-}
-elsif ($C) {
+} elsif ($C) {
     printf("Generating .talk clips\n  Path: %s\n  Language: %s\n  Encoder (options): %s (%s)\n  TTS Engine (options): %s (%s)\n", $ARGV[0], $l, $e, $E, $s, $S);
-    my $tts_object = init_tts($s, $S, $l);
     gentalkclips($ARGV[0], $tts_object, $e, $E, $S, 0);
     shutdown_tts($tts_object);
-}
-else {
+} else {
     printusage();
     exit 1;
 }

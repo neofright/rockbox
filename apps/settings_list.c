@@ -1412,8 +1412,6 @@ const struct settings_list settings[] = {
     CHOICE_SETTING(0, recursive_dir_insert, LANG_RECURSE_DIRECTORY , RECURSE_ON,
                    "recursive directory insert", off_on_ask, NULL , 3 ,
                    ID2P(LANG_OFF), ID2P(LANG_ON), ID2P(LANG_ASK)),
-    OFFON_SETTING(0, playlist_reload_after_save, LANG_PLAYLIST_RELOAD_AFTER_SAVE,
-                  false, "reload after saving playlist", NULL),
     /* bookmarks */
     CHOICE_SETTING(0, autocreatebookmark, LANG_BOOKMARK_SETTINGS_AUTOCREATE,
                    BOOKMARK_NO, "autocreate bookmarks",
@@ -1815,7 +1813,10 @@ const struct settings_list settings[] = {
 
 #ifdef HAVE_TAGCACHE
 #ifdef HAVE_TC_RAMCACHE
-    OFFON_SETTING(F_BANFROMQS,tagcache_ram,LANG_TAGCACHE_RAM,false,"tagcache_ram",NULL),
+    CHOICE_SETTING(F_BANFROMQS, tagcache_ram, LANG_TAGCACHE_RAM,
+                   0, "tagcache_ram", "off,on,quick",
+                   NULL, 3,
+                   ID2P(LANG_OFF), ID2P(LANG_ON), ID2P(LANG_QUICK_IGNORE_DIRACHE)),
 #endif
     OFFON_SETTING(F_BANFROMQS, tagcache_autoupdate, LANG_TAGCACHE_AUTOUPDATE, false,
                   "tagcache_autoupdate", NULL),
@@ -1850,6 +1851,25 @@ const struct settings_list settings[] = {
                       ID2P(LANG_SET_BOOL_NO),
                       ID2P(LANG_SET_BOOL_YES),
                       ID2P(LANG_IN_SUBMENU)),
+
+    CHOICE_SETTING(0, browser_default, LANG_DEFAULT_BROWSER, 0,
+                      "default browser",
+#ifdef HAVE_TAGCACHE
+                      "files,database,playlists",
+#else
+                      "files,playlists",
+#endif
+                      NULL,
+#ifdef HAVE_TAGCACHE
+                      3
+#else
+                      2
+#endif
+                      ,ID2P(LANG_DIR_BROWSER),
+#ifdef HAVE_TAGCACHE
+                      ID2P(LANG_TAGCACHE),
+#endif
+                      ID2P(LANG_CATALOG)),
 
 #ifdef HAVE_BACKLIGHT
     CHOICE_SETTING(0, backlight_on_button_hold,

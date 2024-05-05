@@ -2,6 +2,7 @@
 alpine_cdc,apps
 alarmclock,apps
 announce_status,demos
+amaze,games
 autostart,apps
 battery_bench,apps
 bench_scaler,apps
@@ -81,6 +82,7 @@ pacbox,games
 pdbox,viewers
 pegbox,games
 periodic_table,apps
+picross,games
 pictureflow,demos
 pitch_detector,apps
 pitch_screen,viewers
