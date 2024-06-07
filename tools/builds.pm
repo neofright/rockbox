@@ -440,7 +440,11 @@ $releasenotes="/wiki/ReleaseNotes315";
         manualok => 1, # Remove once status moves to 3
     },
     'aigoerosq' => {
-        name => 'AIGO EROS Q / K',
+        name => 'AIGO EROS Q / K (Hosted)',
+        status => 2,
+    },
+    'erosqnative' => {
+        name => 'AIGO EROS Q / K (Native)',
         status => 2,
     },
     'ihifi770' => {
@@ -541,6 +545,17 @@ sub allbuilds {
         'enabled' => 1,
     },
     # Everything else in alphabetical order
+    'czech' => {
+	'lang' => 'czech',
+	'name' => 'Čeština (Czech)',
+        'short' => 'cs',
+        'defengine' => 'espeak',
+	'engines' => {
+	    'espeak' => '-vcs',
+	    'gtts' => '-l cs',
+	},
+        'enabled' => 0,
+    },
     'dansk' => {
 	'lang' => 'dansk',
 	'name' => 'Dansk (Danish)',
@@ -563,6 +578,17 @@ sub allbuilds {
 	},
         'enabled' => 1,
     },
+    'eesti' => {
+	'lang' => 'eesti',
+	'name' => 'Eesti (Estonian)',
+        'short' => 'et',
+        'defengine' => 'espeak',
+	'engines' => {
+	    'espeak' => '-vet',
+	    'gtts' => '-l et',
+	},
+        'enabled' => 0,
+    },
     'english-us' => {
 	'lang' => 'english-us',
 	'name' => 'American English',
@@ -574,6 +600,30 @@ sub allbuilds {
 	    'gtts' => '-l en -t us',
 	},
         'enabled' => 1,
+    },
+    'espanol' => {
+	'lang' => 'espanol',
+	'name' => 'Spanish (Peninsular)',
+        'short' => 'es-es',
+        'defengine' => 'espeak',
+	'engines' => {
+	    'festival' => '--language spanish',
+	    'espeak' => '-ves -k 5',
+	    'gtts' => '-l es',
+	},
+        'enabled' => 0,
+    },
+    'espanol-mx' => {
+	'lang' => 'espanol',
+	'name' => 'Spanish (Mexican)',
+        'short' => 'es-mx',
+        'defengine' => 'espeak',
+	'engines' => {
+	    'festival' => '--language spanish',
+	    'espeak' => '-ves -k 6',
+	    'gtts' => '-l es -t mx',
+	},
+        'enabled' => 0,
     },
     'francais' => {
 	'lang' => 'francais',

@@ -21,7 +21,7 @@
  ****************************************************************************/
 ]]
 
-local scrpath = rb.current_path() .. "/lua_scripts/"
+local scrpath = rb.current_path()
 
 package.path = scrpath .. "/?.lua;" .. package.path --add lua_scripts directory to path
 require("printmenus")
@@ -29,7 +29,6 @@ require("printmenus")
 rb.actions = nil
 package.loaded["actions"] = nil
 
-local excludedsrc = ";filebrowse.lua;fileviewers.lua;printmenu.lua;dbgettags.lua;"
 --------------------------------------------------------------------------------
 local Icon_Plugin = 0x9
 
@@ -47,7 +46,7 @@ local function get_files(path, norecurse, finddir, findfile, f_t, d_t)
         if name:len() <= 2 and (name == "." or name == "..") then
             return false
         end
-        if string.find(excludedsrc, ";" .. name .. ";") then
+        if string.sub(name, 1, 1) == '.'  then
             return false
         end
         if string.sub(name, -4) == ".lua" then

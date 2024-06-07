@@ -42,6 +42,7 @@
 #include "plugin.h"
 #include "file.h"
 #include "pathfuncs.h"
+#include "playlist_menu.h"
 
 /*#define LOGF_ENABLE*/
 #include "logf.h"
@@ -289,14 +290,17 @@ static bool add_bookmark(const char* bookmark_file_name,
     uint32_t pl_hash, pl_track_hash;
     uint32_t bm_pl_hash, bm_pl_track_hash;
 
+    if (!bookmark)
+        return false; /* no bookmark */
+
     /* Opening up a temp bookmark file */
     temp_bookmark_file = open_temp_bookmark(fnamebuf,
                                             sizeof(fnamebuf),
                                             O_WRONLY | O_CREAT | O_TRUNC,
                                             bookmark_file_name);
 
-    if (temp_bookmark_file < 0 || !bookmark)
-        return false; /* can't open the temp file or no bookmark */
+    if (temp_bookmark_file < 0)
+        return false; /* can't open the temp file */
 
     if (most_recent && ((global_settings.usemrb == BOOKMARK_ONE_PER_PLAYLIST)
                       || (global_settings.usemrb == BOOKMARK_ONE_PER_TRACK)))
@@ -875,10 +879,10 @@ static bool delete_bookmark(const char* bookmark_file_name, int bookmark_id)
     close(temp_bookmark_file);
 
     /* only retrieve the path*/
-    open_temp_bookmark(global_temp_buffer,
+    close(open_temp_bookmark(global_temp_buffer,
                        sizeof(global_temp_buffer),
                        O_PATH,
-                       bookmark_file_name);
+                       bookmark_file_name));
 
     remove(bookmark_file_name);
     rename(global_temp_buffer, bookmark_file_name);
@@ -975,7 +979,7 @@ static int select_bookmark(const char* bookmark_file_name,
         {
             MENUITEM_STRINGLIST(menu_items, ID2P(LANG_BOOKMARK_CONTEXT_MENU),
                 NULL, ID2P(LANG_BOOKMARK_CONTEXT_RESUME),
-                ID2P(LANG_BOOKMARK_CONTEXT_DELETE));
+                ID2P(LANG_DELETE));
             static const int menu_actions[] =
             {
                 ACTION_STD_OK, ACTION_BMS_DELETE
@@ -1096,6 +1100,9 @@ static bool play_bookmark(const char* bookmark)
 /* ----------------------------------------------------------------------- */
 bool bookmark_create_menu(void)
 {
+    if (!bookmark_is_bookmarkable_state())
+        save_playlist_screen(NULL);
+
     return write_bookmark(true);
 }
 /* ----------------------------------------------------------------------- */
@@ -1295,7 +1302,7 @@ bool bookmark_exists(void)
 
     char* name = playlist_get_name(NULL, global_temp_buffer,
                                    sizeof(global_temp_buffer));
-    if (!playlist_dynamic_only() && 
+    if (!playlist_dynamic_only() &&
         generate_bookmark_file_name(bm_filename, sizeof(bm_filename), name, -1))
     {
         exist = file_exists(bm_filename);

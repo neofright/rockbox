@@ -818,6 +818,15 @@ static void volume_limit_set_default(void* setting, void* defaultval)
     *(int*)setting = sound_max(SOUND_VOLUME);
 }
 
+#if defined(HAVE_EROS_QN_CODEC)
+static void stereosw_apply(int arg)
+{
+    (void)arg;
+
+    sound_settings_apply();
+}
+#endif
+
 const struct settings_list settings[] = {
     /* sound settings */
     SOUND_SETTING(F_NO_WRAP, volume, LANG_VOLUME, "volume", SOUND_VOLUME),
@@ -2294,6 +2303,11 @@ const struct settings_list settings[] = {
     (CONFIG_KEYPAD == IRIVER_H10_PAD)
     OFFON_SETTING(0, clear_settings_on_hold, LANG_CLEAR_SETTINGS_ON_HOLD,
                   true, "clear settings on hold", NULL),
+#endif
+#if defined(HAVE_EROS_QN_CODEC)
+    CHOICE_SETTING(0, stereosw_mode, LANG_STEREOSW_MODE, 0, "stereo switch mode",
+    "normal,reverse,always0,always1", stereosw_apply, 4,
+    ID2P(LANG_NORMAL), ID2P(LANG_REVERSE), ID2P(LANG_ALWAYS_ZERO), ID2P(LANG_ALWAYS_ONE)),
 #endif
 };
 

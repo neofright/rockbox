@@ -41,6 +41,7 @@
 #include "tagtree.h"
 #include "lang.h"
 #include "logf.h"
+#include "talk.h"
 #include "playlist.h"
 #include "keyboard.h"
 #include "gui/list.h"
@@ -1311,30 +1312,6 @@ void tagtree_init(void)
     initialize_tagtree();
 }
 
-static bool show_search_progress(bool init, int count)
-{
-    static int last_tick = 0;
-
-    /* Don't show splashes for 1/2 second after starting search */
-    if (init)
-    {
-        last_tick = current_tick + HZ/2;
-        return true;
-    }
-
-    /* Update progress every 1/10 of a second */
-    if (TIME_AFTER(current_tick, last_tick + HZ/10))
-    {
-        splashf(0, str(LANG_PLAYLIST_SEARCH_MSG), count, str(LANG_OFF_ABORT));
-        if (action_userabort(TIMEOUT_NOBLOCK))
-            return false;
-        last_tick = current_tick;
-        yield();
-    }
-
-    return true;
-}
-
 static int format_str(struct tagcache_search *tcs, struct display_format *fmt,
                       char *buf, int buf_size)
 {
@@ -1744,7 +1721,12 @@ entry_skip_formatter:
 
     if (!sort && (sort_inverse || sort_limit))
     {
-        splashf(HZ*4, ID2P(LANG_SHOWDIR_BUFFER_FULL), total_count);
+        if (global_settings.talk_menu) {
+            talk_id(LANG_SHOWDIR_BUFFER_FULL, true);
+            talk_value(total_count, UNIT_INT, true);
+        }
+
+        splashf(HZ*4, str(LANG_SHOWDIR_BUFFER_FULL), total_count);
         logf("Too small dir buffer");
         return 0;
     }
@@ -1915,14 +1897,24 @@ int tagtree_enter(struct tree_context* c, bool is_visible)
             || is_random_item)
         {
             max_history_level = c->dirlevel + 1;
-            selected_item_history[c->dirlevel + 1] = 0;
+            if (max_history_level < MAX_DIR_LEVELS)
+                selected_item_history[max_history_level] = 0;
         }
 
         selected_item_history[c->dirlevel]=c->selected_item;
     }
     table_history[c->dirlevel] = c->currtable;
     extra_history[c->dirlevel] = c->currextra;
-    c->dirlevel++;
+
+    if (c->dirlevel + 1 < MAX_DIR_LEVELS)
+    {
+        c->dirlevel++;
+        /*DEBUGF("Tagtree depth %d\n", c->dirlevel);*/
+    }
+    else
+    {
+        DEBUGF("Tagtree depth exceeded\n");
+    }
 
     /* lock buflib for possible I/O to protect dptr */
     tree_lock_cache(c);
@@ -2075,7 +2067,15 @@ void tagtree_exit(struct tree_context* c, bool is_visible)
     }
     c->dirfull = false;
     if (c->dirlevel > 0)
+    {
         c->dirlevel--;
+        /*DEBUGF("Tagtree depth %d\n", c->dirlevel);*/
+    }
+    else
+    {
+        DEBUGF("Tagtree nothing to exit\n");
+    }
+
     if (is_visible)
         c->selected_item = selected_item_history[c->dirlevel];
     c->currtable = table_history[c->dirlevel];

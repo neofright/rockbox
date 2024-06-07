@@ -177,21 +177,12 @@ static int bookmark_menu_callback(int action,
     switch (action)
     {
         case ACTION_REQUEST_MENUITEM:
-            /* hide create bookmark option if bookmarking isn't currently possible (no track playing, queued tracks...) */
-            if (this_item == &bookmark_create_menu_item)
-            {
-                if (!bookmark_is_bookmarkable_state())
-                    return ACTION_EXIT_MENUITEM;
-            }
             /* hide loading bookmarks menu if no bookmarks exist */
-            else if (this_item == &bookmark_load_menu_item)
+            if (this_item == &bookmark_load_menu_item)
             {
                 if (!bookmark_exists())
                     return ACTION_EXIT_MENUITEM;
             }
-            /* hide the bookmark menu if bookmarks can't be loaded or created */
-            else if (!bookmark_is_bookmarkable_state() && !bookmark_exists())
-                return ACTION_EXIT_MENUITEM;
             break;
         case ACTION_EXIT_MENUITEM:
             settings_save();
@@ -739,7 +730,7 @@ static int delete_file_dir(void)
     }
 
     clear_display(true);
-    splash(HZ/2, str(LANG_DELETING));
+    splash(HZ/2, ID2P(LANG_DELETING));
 
     int rc = -1;
 
@@ -1451,9 +1442,9 @@ static int clipboard_callback(int action,
                 return (clipboard.path[0] != 0) ?
                                     action : ACTION_EXIT_MENUITEM;
             }
-            else if (this_item == &create_dir_item)
+            else if (this_item == &create_dir_item &&
+                     *tree_get_context()->dirfilter <= NUM_FILTER_MODES)
             {
-                /* always visible */
                 return action;
             }
             else if (selected_file)
@@ -1826,4 +1817,3 @@ int get_onplay_context(void)
 {
     return context;
 }
-

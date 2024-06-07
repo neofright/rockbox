@@ -555,6 +555,12 @@ static ssize_t format_track_path(char *dest, char *src, int buf_length,
                                  const char *dir, size_t dlen)
 {
     /* Look for the end of the string (includes NULL) */
+
+    if (!src || !dest || !dir)
+    {
+        DEBUGF("%s() bad pointer", __func__);
+        return -2; /* bad pointers */
+    }
     size_t len = strcspn(src, "\r\n");;
     /* Now work back killing white space */
     while (len > 0)
@@ -1042,6 +1048,8 @@ static int get_track_filename(struct playlist_info* playlist, int index,
     char tmp_buf[MAX_PATH+1];
     char dir_buf[MAX_PATH+1];
     bool utf8 = playlist->utf8;
+    if (buf_length > 0)
+        buf[0] = '\0';
 
     if (index < 0 || index >= playlist->amount)
         return -1;
@@ -2498,74 +2506,105 @@ int playlist_insert_directory(struct playlist_info* playlist,
 }
 
 /*
- * Insert all tracks from specified playlist into dynamic playlist.
+ * If action_cb is *not* NULL, it will be called for every track contained
+ * in the playlist specified by filename. If action_cb is NULL, you must
+ * instead provide a playlist insert context to use for adding each track
+ * into a dynamic playlist.
  */
-int playlist_insert_playlist(struct playlist_info* playlist, const char *filename,
-                             int position, bool queue)
+bool playlist_entries_iterate(const char *filename,
+                              struct playlist_insert_context *pl_context,
+                              bool (*action_cb)(const char *file_name))
 {
-    int fd = -1;
+    int fd = -1, i = 0;
+    bool ret = false;
     int max;
     char *dir;
 
     char temp_buf[MAX_PATH+1];
     char trackname[MAX_PATH+1];
 
-    int result = -1;
     bool utf8 = is_m3u8_name(filename);
+
+    cpu_boost(true);
+
+    fd = open_utf8(filename, O_RDONLY);
+    if (fd < 0)
+    {
+        notify_access_error();
+        goto out;
+    }
+
+    /* we need the directory name for formatting purposes */
+    size_t dirlen = path_dirname(filename, (const char **)&dir);
+    //dir = strmemdupa(dir, dirlen);
+
+
+    if (action_cb)
+        show_search_progress(true, 0);
+
+    while ((max = read_line(fd, temp_buf, sizeof(temp_buf))) > 0)
+    {
+        /* user abort */
+        if (!action_cb && action_userabort(TIMEOUT_NOBLOCK))
+            break;
+
+        if (temp_buf[0] != '#' && temp_buf[0] != '\0')
+        {
+            i++;
+            if (!utf8)
+            {
+                /* Use trackname as a temporay buffer. Note that trackname must
+                 * be as large as temp_buf.
+                 */
+                max = convert_m3u_name(temp_buf, max, sizeof(temp_buf), trackname);
+            }
+
+            /* we need to format so that relative paths are correctly
+               handled */
+            if (format_track_path(trackname, temp_buf,
+                                  sizeof(trackname), dir, dirlen) < 0)
+            {
+                goto out;
+            }
+
+            if (action_cb)
+            {
+                if (!action_cb(trackname))
+                    goto out;
+                else if (!show_search_progress(false, i))
+                    break;
+            }
+            else if (playlist_insert_context_add(pl_context, trackname) < 0)
+                goto out;
+        }
+
+        /* let the other threads work */
+        yield();
+    }
+    ret = true;
+
+out:
+    close(fd);
+    cpu_boost(false);
+    return ret;
+}
+
+/*
+ * Insert all tracks from specified playlist into dynamic playlist.
+ */
+int playlist_insert_playlist(struct playlist_info* playlist, const char *filename,
+                             int position, bool queue)
+{
+
+    int result = -1;
 
     struct playlist_insert_context pl_context;
     cpu_boost(true);
 
-    if (playlist_insert_context_create(playlist, &pl_context, position, queue, true) >= 0)
-    {
-        fd = open_utf8(filename, O_RDONLY);
-        if (fd < 0)
-        {
-            notify_access_error();
-            goto out;
-        }
+    if (playlist_insert_context_create(playlist, &pl_context, position, queue, true) >= 0
+         && playlist_entries_iterate(filename, &pl_context, NULL))
+        result = 0;
 
-        /* we need the directory name for formatting purposes */
-        size_t dirlen = path_dirname(filename, (const char **)&dir);
-        //dir = strmemdupa(dir, dirlen);
-
-        while ((max = read_line(fd, temp_buf, sizeof(temp_buf))) > 0)
-        {
-            /* user abort */
-            if (action_userabort(TIMEOUT_NOBLOCK))
-                break;
-
-            if (temp_buf[0] != '#' && temp_buf[0] != '\0')
-            {
-                if (!utf8)
-                {
-                    /* Use trackname as a temporay buffer. Note that trackname must
-                     * be as large as temp_buf.
-                     */
-                    max = convert_m3u_name(temp_buf, max, sizeof(temp_buf), trackname);
-                }
-
-                /* we need to format so that relative paths are correctly
-                   handled */
-                if (format_track_path(trackname, temp_buf,
-                                      sizeof(trackname), dir, dirlen) < 0)
-                {
-                    goto out;
-                }
-
-                if (playlist_insert_context_add(&pl_context, trackname) < 0)
-                    goto out;
-            }
-
-            /* let the other threads work */
-            yield();
-        }
-    }
-
-    result = 0;
-
-out:
-    close(fd);
     cpu_boost(false);
     playlist_insert_context_release(&pl_context);
     return result;
@@ -3861,7 +3900,7 @@ static int pl_save_update_control(struct playlist_info* playlist,
                                   char *tmpbuf, size_t tmpsize)
 {
     int old_fd;
-    int err;
+    int err = 0;
     char c;
     bool any_queued = false;
 
@@ -3882,8 +3921,8 @@ static int pl_save_update_control(struct playlist_info* playlist,
     playlist->control_fd = open(tmpbuf, O_CREAT|O_RDWR|O_TRUNC, 0666);
     if (playlist->control_fd < 0)
     {
-        close(old_fd);
-        return -3;
+        err = -3;
+        goto error;
     }
 
     /* Write out playlist filename */
@@ -3898,7 +3937,10 @@ static int pl_save_update_control(struct playlist_info* playlist,
     playlist->filename[playlist->dirlen-1] = c;
 
     if (err <= 0)
-        return -4;
+    {
+        err = -4;
+        goto error;
+    }
 
     if (playlist->first_index > 0)
     {
@@ -3928,8 +3970,10 @@ static int pl_save_update_control(struct playlist_info* playlist,
                                       index, playlist->last_insert_pos,
                                       tmpbuf, NULL, &seekpos);
         if (err <= 0)
-            return -5;
-
+        {
+            err = -5;
+            goto error;
+        }
         /* Update seek offset for the new control file. */
         playlist->indices[index] &= ~PLAYLIST_SEEK_MASK;
         playlist->indices[index] |= seekpos;
@@ -3944,7 +3988,10 @@ static int pl_save_update_control(struct playlist_info* playlist,
             err = update_control_unlocked(playlist, PLAYLIST_COMMAND_FLAGS,
                                           PLAYLIST_FLAG_MODIFIED, 0, NULL, NULL, NULL);
             if (err <= 0)
-                return -6;
+            {
+                err = -6;
+                goto error;
+            }
         }
         else
         {
@@ -3970,7 +4017,12 @@ static int pl_save_update_control(struct playlist_info* playlist,
 
     playlist->control_fd = open(playlist->control_filename, O_RDWR);
     playlist->control_created = (playlist->control_fd >= 0);
+
     return 0;
+
+error:
+    close(old_fd);
+    return err;
 }
 
 int playlist_save(struct playlist_info* playlist, char *filename)

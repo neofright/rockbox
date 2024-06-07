@@ -974,6 +974,10 @@ struct plugin_api {
 #endif
     int (*playlist_get_first_index)(const struct playlist_info* playlist);
     int (*playlist_get_display_index)(void);
+    char* (*filetype_get_plugin)(int attr, char *buffer, size_t buffer_len);
+    bool (*playlist_entries_iterate)(const char *filename,
+                                     struct playlist_insert_context *pl_context,
+                                     bool (*action_cb)(const char *file_name));
 };
 
 /* plugin header */

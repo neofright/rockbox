@@ -17,6 +17,7 @@
 
 use strict;
 use warnings;
+use utf8;
 use File::Basename;
 use File::Copy;
 use vars qw($V $C $t $l $e $E $s $S $i $v $f $F);
@@ -25,8 +26,8 @@ use IPC::Open3;
 use Digest::MD5 qw(md5_hex);
 use DirHandle;
 use open ':encoding(utf8)';
-use open ':std';
-use utf8;
+use Encode::Locale;
+use Encode;
 
 sub printusage {
     print <<USAGE
@@ -89,6 +90,7 @@ my %gtts_lang_map = (
     'czech' => '-l cs',
     'dansk' => '-l da',
     'deutsch' => '-l de',
+    'eesti' => '-l et',
     'english-us' => '-l en -t us',
     'espanol' => '-l es',
     'francais' => '-l fr',
@@ -110,6 +112,7 @@ my %espeak_lang_map = (
     'czech' => '-vcs',
     'dansk' => '-vda',
     'deutsch' => '-vde',
+    'eesti' => '-vet',
     'english-us' => '-ven-us -k 5',
     'espanol' => '-ves',
     'francais' => '-vfr-fr',
@@ -132,11 +135,12 @@ my %piper_lang_map = (
     'czech' => 'cs_CZ-jirka-medium.onnx',
     'dansk' => 'da_DK-talesyntese-medium.onnx',
     'deutsch' => 'de_DE-thorsten-high.onnx',
-    'english-us' => 'en_US-libritts-high.onnx',
+#    'eesti' => '-vet',
+    'english-us' => 'en_US-lessac-high.onnx',
     'espanol' => 'es_ES-sharvard-medium.onnx',
     'francais' => 'fr_FR-siwis-medium.onnx',
     'greek' => 'el_GR-rapunzelina-low.onnx',
-#    'magyar' => '-vhu',
+    'magyar' => 'hu_HU-anna-medium.onnx',
     'italiano' => 'it_IT-riccardo-x_low.onnx',
 #    'japanese' => '-vja',
     'nederlands' => 'nl_NL-mls-medium.onnx',
@@ -562,6 +566,7 @@ sub gentalkclips {
     my ($dir, $tts_object, $encoder, $encoder_opts, $tts_engine_opts, $i) = @_;
     my $d = new DirHandle $dir;
     while (my $file = $d->read) {
+	$file = Encode::decode( locale_fs => $file);
         my ($voice, $wav, $enc);
 	my $format = $tts_object->{'format'};
 
@@ -580,13 +585,13 @@ sub gentalkclips {
         if ($file eq '.' || $file eq '..' || $file =~ /\.talk$/) {
             next;
         }
-        # Element is a dir
-        if ( -d $path) {
+
+        if ( -d $path) { # Element is a dir
 	    $enc = sprintf("%s/_dirname.talk", $path);
-            gentalkclips($path, $tts_object, $encoder, $encoder_opts, $tts_engine_opts, $i);
-        }
-        # Element is a file
-        else {
+            if (! -e "$path/talkclips.ignore") { # Skip directories containing "talkclips.ignore"
+                gentalkclips($path, $tts_object, $encoder, $encoder_opts, $tts_engine_opts, $i);
+            }
+        } else { # Element is a file
             $enc = sprintf("%s.talk", $path);
             $voice =~ s/\.[^\.]*$//; # Trim extension
         }

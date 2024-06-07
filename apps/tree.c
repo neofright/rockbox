@@ -276,9 +276,11 @@ static int tree_voice_cb(int selected_item, void * data)
 
     /* spell name AFTER voicing filetype */
     if (spell_name) {
+        bool stripit = false;
+        char *ext = NULL;
+
         /* Don't spell the extension if it's not displayed */
         if (!is_dir) {
-            bool stripit;
             switch(global_settings.show_filename_ext) {
             case 0:
                 /* show file extension: off */
@@ -301,13 +303,15 @@ static int tree_voice_cb(int selected_item, void * data)
             }
 
             if (stripit) {
-                char *ext = strrchr(name, '.');
+                ext = strrchr(name, '.');
                 if (ext)
                     *ext = 0;
             }
         }
-
         talk_spell(name, true);
+
+        if (stripit && ext)
+            *ext = '.';
     }
 
     return 0;
@@ -466,6 +470,13 @@ static int update_dir(void)
             icon = tc.browse->icon;
             if (icon == NOICON)
                 icon = filetype_get_icon(ATTR_DIRECTORY);
+            /* display sub directories in the title of plugin browser */
+            if (tc.dirlevel > 0 && *tc.dirfilter == SHOW_PLUGINS)
+            {
+                char *subdir = strrchr(tc.currdir, '/');
+                if (subdir)
+                    title = subdir + 1; /* step past the separator */
+            }
         }
         else
         {
@@ -610,7 +621,7 @@ static void set_current_file_ex(const char *path, const char *filename)
         /* gets the directory's name and put it into tc.currdir */
         filename = strrchr(path+1,'/');
         size_t endpos = filename - path;
-        if (endpos < MAX_PATH - 1)
+        if (filename && endpos < MAX_PATH - 1)
         {
             strmemccpy(tc.currdir, path, endpos + 1);
             filename++;
@@ -1028,7 +1039,7 @@ int rockbox_browse(struct browse_context *browse)
 {
     tc.is_browsing = (browse != NULL);
     int ret_val = 0;
-    int dirfilter = browse->dirfilter;
+    int dirfilter = tc.is_browsing ? browse->dirfilter : SHOW_ALL;
 
     if (backup_count >= NUM_TC_BACKUP)
         return GO_TO_PREVIOUS;
@@ -1056,7 +1067,7 @@ int rockbox_browse(struct browse_context *browse)
             int last_context;
             /* don't reset if its the same browse already loaded */
             if (tc.browse != browse ||
-                !(tc.currdir[1] && strcmp(tc.currdir, browse->root) == 0))
+                !(tc.currdir[1] && strstr(tc.currdir, browse->root) != NULL))
             {
                 tc.browse = browse;
                 tc.selected_item = 0;

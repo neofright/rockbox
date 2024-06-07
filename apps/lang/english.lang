@@ -612,20 +612,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_BOOKMARK_CONTEXT_DELETE
-  desc: bookmark context menu, delete this bookmark
-  user: core
-  <source>
-    *: "Delete"
-  </source>
-  <dest>
-    *: "Delete"
-  </dest>
-  <voice>
-    *: "Delete"
-  </voice>
-</phrase>
-<phrase>
   id: LANG_AUTO_BOOKMARK_QUERY
   desc: prompt for user to decide to create an bookmark
   user: core
@@ -767,7 +753,7 @@
 </phrase>
 <phrase>
   id: LANG_CHANNEL_STEREO
-  desc: in sound_settings
+  desc: in sound_settings and radio screen
   user: core
   <source>
     *: "Stereo"
@@ -781,7 +767,7 @@
 </phrase>
 <phrase>
   id: LANG_CHANNEL_MONO
-  desc: in sound_settings
+  desc: in sound_settings and radio screen
   user: core
   <source>
     *: "Mono"
@@ -1060,20 +1046,6 @@
   </dest>
   <voice>
     *: "Browse equalizer presets"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_EQUALIZER_EDIT_MODE
-  desc: in the equalizer settings menu
-  user: core
-  <source>
-    *: "Edit mode: %s"
-  </source>
-  <dest>
-    *: "Edit mode: %s"
-  </dest>
-  <voice>
-    *: ""
   </voice>
 </phrase>
 <phrase>
@@ -3645,22 +3617,22 @@
   user: core
   <source>
     *: none
-    rtc: "ON = Set"
     gigabeat*,iaudiom5,iaudiox5,ipod*,iriverh10,iriverh10_5gb,mrobe100,sansac200*,sansaclip*,sansaconnect,sansae200*,sansafuze*: "SELECT = Set"
     gogearsa9200,samsungyh*: "PLAY = Set"
     iriverh100,iriverh120,iriverh300: "NAVI = Set"
     mpiohd300: "ENTER = Set"
     mrobe500: "HEART = Set"
+    rtc: "ON = Set"
     vibe500: "OK = Set"
   </source>
   <dest>
     *: none
-    rtc: "ON = Set"
     gigabeat*,iaudiom5,iaudiox5,ipod*,iriverh10,iriverh10_5gb,mrobe100,sansac200*,sansaclip*,sansaconnect,sansae200*,sansafuze*: "SELECT = Set"
     gogearsa9200,samsungyh*: "PLAY = Set"
     iriverh100,iriverh120,iriverh300: "NAVI = Set"
     mpiohd300: "ENTER = Set"
     mrobe500: "HEART = Set"
+    rtc: "ON = Set"
     vibe500: "OK = Set"
   </dest>
   <voice>
@@ -3674,7 +3646,6 @@
   user: core
   <source>
     *: none
-    rtc: "OFF = Revert"
     gigabeatfx,mrobe500: "POWER = Revert"
     gigabeats,sansafuzeplus: "BACK = Revert"
     gogearsa9200: "LEFT = Revert"
@@ -3683,12 +3654,12 @@
     iriverh10,iriverh10_5gb,sansae200*,sansafuze*: "PREV = Revert"
     iriverh100,iriverh120,iriverh300: "STOP = Revert"
     mrobe100: "DISPLAY = Revert"
+    rtc: "OFF = Revert"
     samsungyh*: "REW = Revert"
     vibe500: "CANCEL = Revert"
   </source>
   <dest>
     *: none
-    rtc: "OFF = Revert"
     gigabeatfx,mrobe500: "POWER = Revert"
     gigabeats,sansafuzeplus: "BACK = Revert"
     gogearsa9200: "LEFT = Revert"
@@ -3697,6 +3668,7 @@
     iriverh10,iriverh10_5gb,sansae200*,sansafuze*: "PREV = Revert"
     iriverh100,iriverh120,iriverh300: "STOP = Revert"
     mrobe100: "DISPLAY = Revert"
+    rtc: "OFF = Revert"
     samsungyh*: "REW = Revert"
     vibe500: "CANCEL = Revert"
   </dest>
@@ -4148,23 +4120,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_ALARM_MOD_SHUTDOWN
-  desc: The text that tells the user that the alarm time is ok and the device shuts off (for the RTC alarm mod).
-  user: core
-  <source>
-    *: none
-    alarm: "Alarm Set"
-  </source>
-  <dest>
-    *: none
-    alarm: "Alarm Set"
-  </dest>
-  <voice>
-    *: none
-    alarm: "Alarm set"
-  </voice>
-</phrase>
-<phrase>
   id: LANG_ALARM_MOD_ERROR
   desc: The text that tells that the time is incorrect (for the RTC alarm mod).
   user: core
@@ -4179,20 +4134,6 @@
   <voice>
     *: none
     alarm: "Alarm Time Is Too Soon!"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_ALARM_MOD_KEYS
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
   </voice>
 </phrase>
 <phrase>
@@ -4517,7 +4458,7 @@
     *: "Cleared"
   </dest>
   <voice>
-    *: "Cleared"
+    *: "Settings Cleared"
   </voice>
 </phrase>
 <phrase>
@@ -5393,40 +5334,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_RECORD_DIRECTORY
-  desc: in recording settings_menu
-  user: core
-  <source>
-    *: none
-    recording: "Directory"
-  </source>
-  <dest>
-    *: none
-    recording: "Directory"
-  </dest>
-  <voice>
-    *: none
-    recording: "Directory"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_SET_AS_REC_DIR
-  desc: deprecated
-  user: core
-  <source>
-    *: none
-    recording: ""
-  </source>
-  <dest>
-    *: none
-    recording: ""
-  </dest>
-  <voice>
-    *: none
-    recording: ""
-  </voice>
-</phrase>
-<phrase>
   id: LANG_CLEAR_REC_DIR
   desc:
   user: core
@@ -6105,18 +6012,18 @@
   user: core
   <source>
     *: "Int:"
-    xduoox3: "mSD1:"
     hibylinux: "mSD:"
+    xduoox3: "mSD1:"
   </source>
   <dest>
     *: "Int:"
-    xduoox3: "mSD1:"
     hibylinux: "mSD:"
+    xduoox3: "mSD1:"
   </dest>
   <voice>
     *: "Internal"
-    xduoox3: "micro S D 1"
     hibylinux: "micro S D"
+    xduoox3: "micro S D 1"
   </voice>
 </phrase>
 <phrase>
@@ -6134,7 +6041,7 @@
     *: none
     hibylinux: "USB:"
     multivolume: "HD1:"
-    sansac200*,sansaclipplus,sansae200*,sansafuze*: "MSD:"
+    sansac200*,sansaclipplus,sansae200*,sansafuze*: "mSD:"
     xduoox3: "mSD2:"
   </dest>
   <voice>
@@ -6230,62 +6137,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_INSERT
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_INSERT_FIRST
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_INSERT_LAST
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_INSERT_SHUFFLED
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
   id: LANG_QUEUE
   desc: The verb/action Queue
   user: core
@@ -6339,20 +6190,6 @@
   </dest>
   <voice>
     *: "Queue Shuffled"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_REPLACE
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
   </voice>
 </phrase>
 <phrase>
@@ -6437,34 +6274,6 @@
   </dest>
   <voice>
     *: "Reshuffle"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_CATALOG_VIEW
-  desc: in onplay playlist catalogue submenu
-  user: core
-  <source>
-    *: "View Catalogue"
-  </source>
-  <dest>
-    *: "View Catalogue"
-  </dest>
-  <voice>
-    *: "View Catalogue"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_CATALOG_ADD_TO
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
   </voice>
 </phrase>
 <phrase>
@@ -6818,20 +6627,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_ID3_ALBUM_GAIN
-  desc: in tag viewer
-  user: core
-  <source>
-    *: "Album Gain"
-  </source>
-  <dest>
-    *: "Album Gain"
-  </dest>
-  <voice>
-    *: "Album gain"
-  </voice>
-</phrase>
-<phrase>
   id: LANG_ID3_PATH
   desc: in tag viewer
   user: core
@@ -6856,7 +6651,7 @@
     *: "<No Info>"
   </dest>
   <voice>
-    *: "No info"
+    *: "No Info"
   </voice>
 </phrase>
 <phrase>
@@ -7242,20 +7037,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_PLAYLIST_CONTROL_UPDATE_ERROR
-  desc: Playlist error
-  user: core
-  <source>
-    *: "Error updating playlist control file"
-  </source>
-  <dest>
-    *: "Error updating playlist control file"
-  </dest>
-  <voice>
-    *: "Error updating playlist control file"
-  </voice>
-</phrase>
-<phrase>
   id: LANG_PLAYLIST_ACCESS_ERROR
   desc: Playlist error
   user: core
@@ -7438,23 +7219,6 @@
   <voice>
     *: none
     iaudiom5,iaudiox5,iriverh100,iriverh120,iriverh300,recording,samsungyh*,sansac200*,sansae200*,vibe500: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_DB_INF
-  desc: -inf db for values below measurement
-  user: core
-  <source>
-    *: none
-    recording: "-inf"
-  </source>
-  <dest>
-    *: none
-    recording: "-inf"
-  </dest>
-  <voice>
-    *: none
-    recording: "minus infinity"
   </voice>
 </phrase>
 <phrase>
@@ -7680,23 +7444,6 @@
   <voice>
     *: none
     charging: "Battery: Charging"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_BATTERY_TRICKLE_CHARGE
-  desc: in info display, shows that trickle charge is running
-  user: core
-  <source>
-    *: none
-    charging: "Battery: Trickle Chg"
-  </source>
-  <dest>
-    *: none
-    charging: "Battery: Trickle Chg"
-  </dest>
-  <voice>
-    *: none
-    charging: "Trickle charge"
   </voice>
 </phrase>
 <phrase>
@@ -9696,15 +9443,15 @@
   user: core
   <source>
     *: none
-    gigabeatfx,sansafuzeplus,fiiom3k: "Touchpad Sensitivity"
+    fiiom3k,gigabeatfx,sansafuzeplus: "Touchpad Sensitivity"
   </source>
   <dest>
     *: none
-    gigabeatfx,sansafuzeplus,fiiom3k: "Touchpad Sensitivity"
+    fiiom3k,gigabeatfx,sansafuzeplus: "Touchpad Sensitivity"
   </dest>
   <voice>
     *: none
-    gigabeatfx,sansafuzeplus,fiiom3k: "Touchpad Sensitivity"
+    fiiom3k,gigabeatfx,sansafuzeplus: "Touchpad Sensitivity"
   </voice>
 </phrase>
 <phrase>
@@ -10631,20 +10378,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_SCROLLBAR_POSITION
-  desc: in Settings -> General -> Display -> Status-/Scrollbar
-  user: core
-  <source>
-    *: "Scroll Bar Position"
-  </source>
-  <dest>
-    *: "Scroll Bar Position"
-  </dest>
-  <voice>
-    *: "Scroll bar position"
-  </voice>
-</phrase>
-<phrase>
   id: LANG_COMPRESSOR
   desc: in sound settings
   user: core
@@ -10920,20 +10653,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_STATUSBAR_CUSTOM
-  desc: if this translation is compatible with LANG_CHANNEL_CUSTOM, then please use the same translation. it can be combined later then
-  user: core
-  <source>
-    *: "Custom"
-  </source>
-  <dest>
-    *: "Custom"
-  </dest>
-  <voice>
-    *: "Custom"
-  </voice>
-</phrase>
-<phrase>
   id: VOICE_EXT_SBS
   desc: spoken only, for file extension
   user: core
@@ -10979,20 +10698,6 @@
   <voice>
     *: none
     usb_hid: "USB Human Interface Device"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_INSERT_LAST_SHUFFLED
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
   </voice>
 </phrase>
 <phrase>
@@ -11589,20 +11294,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_SET_AS_START_DIR
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
   id: LANG_RESET_START_DIR
   desc: reset the browser start directory
   user: core
@@ -11704,20 +11395,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_SET_AS_PLAYLISTCAT_DIR
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
   id: LANG_RESET_PLAYLISTCAT_DIR
   desc:
   user: core
@@ -11791,20 +11468,6 @@
   <voice>
     *: none
     touchscreen: "Line Padding in Lists"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_AUTOMATIC
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
   </voice>
 </phrase>
 <phrase>
@@ -12088,15 +11751,15 @@
   user: core
   <source>
     *: none
-    filter_roll_off: "DAC's filter roll-off"
+    filter_roll_off: "DAC filter roll-off"
   </source>
   <dest>
     *: none
-    filter_roll_off: "DAC's filter roll-off"
+    filter_roll_off: "DAC filter roll-off"
   </dest>
   <voice>
     *: none
-    filter_roll_off: "DAC's filter roll-off"
+    filter_roll_off: "DAC filter roll-off"
   </voice>
 </phrase>
 <phrase>
@@ -12360,18 +12023,18 @@
   user: core
   <source>
     *: none
-    dac_power_mode: "DAC's power mode"
-    es9218: "DAC's output level"
+    dac_power_mode: "DAC power mode"
+    es9218: "DAC output level"
   </source>
   <dest>
     *: none
-    dac_power_mode: "DAC's power mode"
-    es9218: "DAC's output level"
+    dac_power_mode: "DAC power mode"
+    es9218: "DAC output level"
   </dest>
   <voice>
     *: none
-    dac_power_mode: "DAC's power mode"
-    es9218: "DAC's output level"
+    dac_power_mode: "DAC power mode"
+    es9218: "DAC output level"
   </voice>
 </phrase>
 <phrase>
@@ -12905,20 +12568,6 @@
   </dest>
   <voice>
     *: "Moving track"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_NO_VIEWERS
-  desc: text for splash to indicate that no viewers are available
-  user: core
-  <source>
-    *: "No viewers found"
-  </source>
-  <dest>
-    *: "No viewers  found"
-  </dest>
-  <voice>
-    *: "No viewers found"
   </voice>
 </phrase>
 <phrase>
@@ -14106,7 +13755,7 @@
     *: "Thinking..."
   </dest>
   <voice>
-    *: ""
+    *: "Thinking"
   </voice>
 </phrase>
 <phrase>
@@ -14724,62 +14373,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_PROPERTIES_ARTIST
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PROPERTIES_TITLE
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PROPERTIES_ALBUM
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PROPERTIES_DURATION
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
   id: LANG_PROPERTIES_SUBDIRS
   desc: in properties plugin
   user: core
@@ -15109,20 +14702,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_CLEAR_PLAYLIST
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
   id: LANG_HIDE_ALBUM_TITLE
   desc: in the pictureflow settings
   user: core
@@ -15232,34 +14811,6 @@
   </dest>
   <voice>
     *: "Cache will be rebuilt on next restart"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PLAYLIST_CLEARED
-  desc: in the pictureflow splash messages
-  user: core
-  <source>
-    *: "Playlist Cleared"
-  </source>
-  <dest>
-    *: "Playlist Cleared"
-  </dest>
-  <voice>
-    *: "Playlist Cleared"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_ADDED_TO_PLAYLIST
-  desc: in the pictureflow splash messages
-  user: core
-  <source>
-    *: "Added to playlist"
-  </source>
-  <dest>
-    *: "Added to playlist"
-  </dest>
-  <voice>
-    *: "Added to playlist"
   </voice>
 </phrase>
 <phrase>
@@ -15809,20 +15360,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_CLEAR_LIST_AND_PLAY_NEXT
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
   id: LANG_QUEUE_MENU
   desc: in onplay menu
   user: core
@@ -15833,7 +15370,7 @@
     *: "Queue..."
   </dest>
   <voice>
-    *: "Queue..."
+    *: "Queue"
   </voice>
 </phrase>
 <phrase>
@@ -15879,20 +15416,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_CLEAR_LIST_AND_PLAY_SHUFFLED
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
   id: LANG_SOFTLOCK_DISABLE_ALL_NOTIFY
   desc: disable all softlock notifications
   user: core
@@ -15932,146 +15455,6 @@
   </dest>
   <voice>
     *: "Always Autolock"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PLAYLIST_RELOAD_AFTER_SAVE
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PROPERTIES_ALBUMARTIST
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PROPERTIES_GENRE
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PROPERTIES_COMMENT
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PROPERTIES_COMPOSER
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PROPERTIES_YEAR
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PROPERTIES_TRACKNUM
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PROPERTIES_DISCNUM
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PROPERTIES_FREQUENCY
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_PROPERTIES_BITRATE
-  desc: deprecated
-  user: core
-  <source>
-    *: ""
-  </source>
-  <dest>
-    *: ""
-  </dest>
-  <voice>
-    *: ""
   </voice>
 </phrase>
 <phrase>
@@ -16377,18 +15760,18 @@
   user: core
   <source>
     *: none
-    ipodcolor,ipodnano1g,ipodvideo,ipod4g,ipodmini1g,ipodmini2g: "Clear settings when hold switch is on during startup"
-    clear_settings_on_hold, iriverh10: "Clear settings when reset button is held during startup"
+    clear_settings_on_hold,iriverh10: "Clear settings when reset button is held during startup"
+    ipod4g,ipodcolor,ipodmini1g,ipodmini2g,ipodnano1g,ipodvideo: "Clear settings when hold switch is on during startup"
   </source>
   <dest>
     *: none
-    ipodcolor,ipodnano1g,ipodvideo,ipod4g,ipodmini1g,ipodmini2g: "Clear settings when hold switch is on during startup"
-    clear_settings_on_hold, iriverh10: "Clear settings when reset button is held during startup"
+    clear_settings_on_hold,iriverh10: "Clear settings when reset button is held during startup"
+    ipod4g,ipodcolor,ipodmini1g,ipodmini2g,ipodnano1g,ipodvideo: "Clear settings when hold switch is on during startup"
   </dest>
   <voice>
     *: none
-    ipodcolor,ipodnano1g,ipodvideo,ipod4g,ipodmini1g,ipodmini2g: "Clear settings when hold switch is on during startup"
-    clear_settings_on_hold, iriverh10: "Clear settings when reset button is held during startup"
+    clear_settings_on_hold,iriverh10: "Clear settings when reset button is held during startup"
+    ipod4g,ipodcolor,ipodmini1g,ipodmini2g,ipodnano1g,ipodvideo: "Clear settings when hold switch is on during startup"
   </voice>
 </phrase>
 <phrase>
@@ -16416,7 +15799,7 @@
     *: "Set As..."
   </dest>
   <voice>
-    *: "Set As..."
+    *: "Set As"
   </voice>
 </phrase>
 <phrase>
@@ -16475,7 +15858,7 @@
     *: "Add to Playlist..."
   </dest>
   <voice>
-    *: "Add to Playlist..."
+    *: "Add to Playlist"
   </voice>
 </phrase>
 <phrase>
@@ -16503,7 +15886,7 @@
     *: "Playing Next..."
   </dest>
   <voice>
-    *: "Playing Next..."
+    *: "Playing Next"
   </voice>
 </phrase>
 <phrase>
@@ -16848,7 +16231,7 @@
     *: "Generating maze..."
   </dest>
   <voice>
-    *: "Generating maze..."
+    *: "Generating maze"
   </voice>
 </phrase>
 <phrase>
@@ -16933,5 +16316,75 @@
   </dest>
   <voice>
     *: "Expert"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_STEREOSW_MODE
+  desc: Stereo Switch Mode
+  user: core
+  <source>
+    *: "Stereo Switch Mode"
+  </source>
+  <dest>
+    *: "Stereo Switch Mode"
+  </dest>
+  <voice>
+    *: "Stereo Switch Mode"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_REVERSE
+  desc: in settings_menu
+  user: core
+  <source>
+    *: "Reverse"
+  </source>
+  <dest>
+    *: "Reverse"
+  </dest>
+  <voice>
+    *: "Reverse"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_ALWAYS_ZERO
+  desc: in settings_menu
+  user: core
+  <source>
+    *: "Always 0"
+  </source>
+  <dest>
+    *: "Always 0"
+  </dest>
+  <voice>
+    *: "Always 0"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_ALWAYS_ONE
+  desc: in settings_menu
+  user: core
+  <source>
+    *: "Always 1"
+  </source>
+  <dest>
+    *: "Always 1"
+  </dest>
+  <voice>
+    *: "Always 1"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_LEGAL_NOTICES
+  desc: in system menu
+  user: core
+  <source>
+    *: "Legal Notices"
+  </source>
+  <dest>
+    *: "Legal Notices"
+  </dest>
+  <voice>
+    *: "Legal Notices"
   </voice>
 </phrase>

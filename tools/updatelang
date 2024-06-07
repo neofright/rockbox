@@ -360,12 +360,13 @@ foreach my $id (@langorder) {
 		$lang{$id}{'dest'}{$tgt} = $english{$id}{'dest'}{$tgt};
 	    }
 	} elsif ($lp{$tgt} ne 'none' && $lp{$tgt} ne '' && not_ignorelist($id) && !$lang{$id}{'new'} && !$ignoredups) {
-	    $lang{$id}{'notes'} .= "### The <dest> section for '$id:$tgt' is identical to english!\n";
+	    $lang{$id}{'notes'} .= "### The <dest> section for '$id:$tgt' is identical to english! (correct or prefix with ~)\n";
 #	    print "#!! '$id:$tgt' dest identical ('$lp{$tgt}')\n";
 	}
 	if ($id eq 'LANG_VOICED_DATE_FORMAT') {
 	    my $sane = $lp{$tgt};
-	    $sane =~ tr/YAmd//d;
+	    $sane =~ s/^~?(.*)/$1/;  # Strip off leading ~ if it's there as it's not a legal character for the format.
+	    $sane =~ tr/YAmd~//d;
 	    if (length($sane) != 0) {
 		$lang{$id}{'notes'} .= "### The <dest> section for '$id:$tgt' has illegal characters!  Restoring from English!\n";
 		$lang{$id}{'notes'} .= "### the previously used one is commented below:\n";
@@ -392,13 +393,13 @@ foreach my $id (@langorder) {
 #	        print "#!! '$id:$tgt' dest does not match src format args: '$fmt1' vs '$fmt2'\n";
 	    }
 	}
-	if (defined($lp{$tgt})) {
-	    $count2 = $lp{$tgt} =~ tr/"//;
-            if ($count2 > 0) {
-		# If it has suspicious characters that are not allowed
-		$lang{$id}{'notes'} .= "### The <dest> section for '$id:$tgt' has some suspicious characters, please double-check!\n";
-#               print "#!! '$id:$tgt' suspicious characters\n";
-	    }
+
+	my $sane = $lang{$id}{'dest'}{$tgt};
+	$sane =~ s/^~?(.*)/$1/;  # Strip off leading ~ if it's there as it's not a legal character otherwise
+	if ($sane =~ tr/"~//) {
+	    # If it has suspicious characters that are not allowed
+	    $lang{$id}{'notes'} .= "### The <dest> section for '$id:$tgt' has some suspicious characters (eg '~'), please double-check!\n";
+#           print "#!! '$id:$tgt' suspicious characters\n";
 	}
     }
 }
@@ -439,11 +440,6 @@ foreach my $id (@langorder) {
 		    $lang{$id}{'dest'}{$tgt} ne $english{$id}{'dest'}{$tgt}) {
 		    $lang{$id}{'notes'} .= "### The <voice> section for '$id:$tgt' is blank! Copying from translated <dest>!\n";
 		    $lang{$id}{'voice'}{$tgt} = $lang{$id}{'dest'}{$tgt};
-		    if ($lang{$id}{'voice'}{$tgt} =~ /%"/) {
-	                # If it has suspicious characters that are not normally voiced..
-		        $lang{$id}{'notes'} .= "### The <voice> section for '$id:$tgt' has some suspicious characters, please double-check!\n";
-			#print "#!! '$id:$tgt' suspicious characters\n";
-		    }
 		} else {
 		    $lang{$id}{'notes'} .= "### The <voice> section for '$id:$tgt' is blank! Copying from english!\n";
 
@@ -466,14 +462,21 @@ foreach my $id (@langorder) {
 		$lang{$id}{'notes'} .= "### The <voice> section for '$id:$tgt' is identical to english, copying translated <dest>\n";
 		    $lang{$id}{'voice'}{$tgt} = $lang{$id}{'dest'}{$tgt};
 	    } else {
-		$lang{$id}{'notes'} .= "### The <voice> section for '$id:$tgt' is identical to english!\n";
+		$lang{$id}{'notes'} .= "### The <voice> section for '$id:$tgt' is identical to english! (correct or prefix with ~)\n";
 	    }
 	}
-        if (defined($lp{$tgt}) && ($lp{$tgt} =~ /%"/)) {
+	my $sane = $lang{$id}{'voice'}{$tgt};
+	$sane =~ s/^~?(.*)/$1/;  # Strip off leading ~ if it's there as it's not a legal character otherwise
+        if ($sane =~ tr/%"~//) {
             # If it has suspicious characters that are not normally voiced..
-            $lang{$id}{'notes'} .= "### The <voice> section for '$id:$tgt' has some suspicious characters, please double-check!\n";
+            $lang{$id}{'notes'} .= "### The <voice> section for '$id:$tgt' has some suspicious characters (eg '%' or '~'), please double-check!\n";
 #            print "#!! '$id:$tgt' suspicious characters\n";
         }
+	if ($lang{$id}{'voice'}{$tgt} =~ /\.\.\./) {
+	    # Ellipses should not be in voice strings
+	    $lang{$id}{'notes'} .= "### The <voice> section for '$id:$tgt' has ellipses (...), please remove!\n";
+#           print "#!! '$id:$tgt' ellipses\n";
+	}
     }
 }
 

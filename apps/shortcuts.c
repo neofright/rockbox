@@ -61,6 +61,7 @@ static const char * const type_strings[SHORTCUT_TYPE_COUNT] = {
     [SHORTCUT_PLAYLISTMENU] = "playlist menu",
     [SHORTCUT_SEPARATOR] = "separator",
     [SHORTCUT_SHUTDOWN] = "shutdown",
+    [SHORTCUT_REBOOT] = "reboot",
     [SHORTCUT_TIME] = "time",
 };
 
@@ -185,10 +186,15 @@ static bool verify_shortcut(struct shortcut* sc)
         case SHORTCUT_SETTING:
             return sc->u.setting != NULL;
         case SHORTCUT_TIME:
-            return sc->name[0] != '\0';
+#if CONFIG_RTC
+            if (sc->u.timedata.talktime)
+                return sc->name[0] != '\0';
+#endif
+            return sc->name[0] != '\0' || sc->u.timedata.sleep_timeout < 0;
         case SHORTCUT_DEBUGITEM:
         case SHORTCUT_SEPARATOR:
         case SHORTCUT_SHUTDOWN:
+        case SHORTCUT_REBOOT:
         default:
             break;
     }
@@ -244,8 +250,11 @@ static void shortcuts_ata_idle_callback(void)
 #endif
             {
                 write(fd, "sleep ", 6);
-                len = snprintf(buf, MAX_PATH, "%d", sc->u.timedata.sleep_timeout);
-                write(fd, buf, len);
+                if (sc->u.timedata.sleep_timeout >= 0)
+                {
+                    len = snprintf(buf, MAX_PATH, "%d", sc->u.timedata.sleep_timeout);
+                    write(fd, buf, len);
+                }
             }
         }
         else
@@ -348,13 +357,18 @@ static int readline_cb(int n, char *buf, void *parameters)
                         sc->u.timedata.talktime = true;
                     else
 #endif
-                    if (!strncasecmp(value, "sleep ", strlen("sleep ")))
-                        sc->u.timedata.sleep_timeout = atoi(&value[strlen("sleep ")]);
+                    if (!strncasecmp(value, "sleep", strlen("sleep")))
+                    {
+                        /* 'sleep' may appear alone or followed by number after a space */
+                        sc->u.timedata.sleep_timeout = strlen(&value[5]) > 1 ?
+                            atoi(&value[strlen("sleep ")]) : -1;
+                    }
                     else
                         sc->type = SHORTCUT_UNDEFINED; /* error */
                     break;
                 case SHORTCUT_SEPARATOR:
                 case SHORTCUT_SHUTDOWN:
+                case SHORTCUT_REBOOT:
                     break;
             }
         }
@@ -420,14 +434,26 @@ static const char * shortcut_menu_get_name(int selected_item, void * data,
         return "";
     if (sc->type == SHORTCUT_SETTING)
         return sc->name[0] ? sc->name : P2STR(ID2P(sc->u.setting->lang_id));
-    else if (sc->type == SHORTCUT_SEPARATOR || sc->type == SHORTCUT_TIME)
+    else if (sc->type == SHORTCUT_SEPARATOR)
         return sc->name;
-    else if (sc->type == SHORTCUT_SHUTDOWN && sc->name[0] == '\0')
+    else if (sc->type == SHORTCUT_TIME)
+    {
+        if (sc->u.timedata.sleep_timeout < 0
+#if CONFIG_RTC
+            && !sc->u.timedata.talktime
+#endif
+        ) /* String representation for toggling sleep timer */
+            return string_sleeptimer(buffer, buffer_len);
+
+        return sc->name;
+    }
+    else if ((sc->type == SHORTCUT_SHUTDOWN || sc->type == SHORTCUT_REBOOT) &&
+             sc->name[0] == '\0')
     {
         /* No translation support as only soft_shutdown has LANG_SHUTDOWN defined */
-        return type_strings[SHORTCUT_SHUTDOWN];
+        return type_strings[sc->type];
     }
-    else if (sc->type == SHORTCUT_BROWSER && (sc->u.path)[0] != '\0')
+    else if (sc->type == SHORTCUT_BROWSER && sc->name[0] == '\0' && (sc->u.path)[0] != '\0')
     {
         char* pos;
         if (path_basename(sc->u.path, (const char **)&pos) > 0)
@@ -438,74 +464,6 @@ static const char * shortcut_menu_get_name(int selected_item, void * data,
     }
 
     return sc->name[0] ? sc->name : sc->u.path;
-}
-
-static int shortcut_menu_get_action(int action, struct gui_synclist *lists)
-{
-    (void)lists;
-    if (action == ACTION_STD_OK || action == ACTION_STD_MENU)
-        return ACTION_STD_CANCEL;
-    else if (action == ACTION_STD_QUICKSCREEN && action != ACTION_STD_CONTEXT)
-        return ACTION_STD_CANCEL;
-    else if (action == ACTION_STD_CONTEXT)
-    {
-        int selection = gui_synclist_get_sel_pos(lists);
-
-        if (confirm_delete_yesno("") != YESNO_YES)
-        {
-            gui_synclist_set_title(lists, lists->title, lists->title_icon);
-            return ACTION_REDRAW;
-        }
-
-        remove_shortcut(selection);
-        gui_synclist_set_nb_items(lists, shortcut_count);
-        gui_synclist_set_title(lists, lists->title, lists->title_icon);
-        if (selection >= shortcut_count)
-            gui_synclist_select_item(lists, shortcut_count - 1);
-        first_idx_to_writeback = 0;
-        overwrite_shortcuts = true;
-        shortcuts_ata_idle_callback();
-        if (shortcut_count == 0)
-            return ACTION_STD_CANCEL;
-        return ACTION_REDRAW;
-    }
-    return action;
-}
-
-static enum themable_icons shortcut_menu_get_icon(int selected_item, void * data)
-{
-    (void)data;
-    int icon;
-    struct shortcut *sc = get_shortcut(selected_item);
-    if (!sc)
-        return Icon_NOICON;
-    if (sc->icon == Icon_NOICON)
-    {
-
-        switch (sc->type)
-        {
-            case SHORTCUT_FILE:
-                return filetype_get_icon(filetype_get_attr(sc->u.path));
-            case SHORTCUT_BROWSER:
-                icon = filetype_get_icon(filetype_get_attr(sc->u.path));
-                if (icon <= 0)
-                    icon = Icon_Folder;
-                return icon;
-            case SHORTCUT_SETTING:
-                return Icon_Menu_setting;
-            case SHORTCUT_DEBUGITEM:
-                return Icon_Menu_functioncall;
-            case SHORTCUT_PLAYLISTMENU:
-                return Icon_Playlist;
-            case SHORTCUT_SHUTDOWN:
-                return Icon_System_menu;
-            case SHORTCUT_TIME:
-                return Icon_Menu_functioncall;
-            default:
-                break;
-        }
-    }
-    return sc->icon;
 }
 
 static int shortcut_menu_speak_item(int selected_item, void * data)
@@ -565,17 +523,25 @@ static int shortcut_menu_speak_item(int selected_item, void * data)
             case SHORTCUT_SETTING:
                 talk_id(sc->u.setting->lang_id, false);
                 break;
-#if CONFIG_RTC
             case SHORTCUT_TIME:
-                talk_id(LANG_TIME_MENU, false);
-                break;
+#if CONFIG_RTC
+                if (sc->u.timedata.talktime)
+                    talk_timedate();
+                else
 #endif
+                if (sc->u.timedata.sleep_timeout < 0)
+                    talk_sleeptimer();
+                else if (sc->name[0])
+                    talk_spell(sc->name, false);
+                break;
             case SHORTCUT_SHUTDOWN:
+            case SHORTCUT_REBOOT:
                 if (!sc->name[0])
                 {
-                    talk_spell(type_strings[SHORTCUT_SHUTDOWN], false);
+                    talk_spell(type_strings[sc->type], false);
                     break;
                 }
+                /* fall-through */
             default:
                 talk_spell(sc->name[0] ? sc->name : sc->u.path, false);
                 break;
@@ -585,9 +551,77 @@ static int shortcut_menu_speak_item(int selected_item, void * data)
     return 0;
 }
 
-void talk_timedate(void);
-const char* sleep_timer_formatter(char* buffer, size_t buffer_size,
-                                  int value, const char* unit);
+static int shortcut_menu_get_action(int action, struct gui_synclist *lists)
+{
+    (void)lists;
+    if (action == ACTION_STD_OK || action == ACTION_STD_MENU)
+        return ACTION_STD_CANCEL;
+    else if (action == ACTION_STD_QUICKSCREEN && action != ACTION_STD_CONTEXT)
+        return ACTION_STD_CANCEL;
+    else if (action == ACTION_STD_CONTEXT)
+    {
+        int selection = gui_synclist_get_sel_pos(lists);
+
+        if (confirm_delete_yesno("") != YESNO_YES)
+        {
+            gui_synclist_set_title(lists, lists->title, lists->title_icon);
+            shortcut_menu_speak_item(selection, NULL);
+            return ACTION_REDRAW;
+        }
+
+        remove_shortcut(selection);
+        gui_synclist_set_nb_items(lists, shortcut_count);
+        gui_synclist_set_title(lists, lists->title, lists->title_icon);
+        if (selection >= shortcut_count)
+            gui_synclist_select_item(lists, shortcut_count - 1);
+        first_idx_to_writeback = 0;
+        overwrite_shortcuts = true;
+        shortcuts_ata_idle_callback();
+        if (shortcut_count == 0)
+            return ACTION_STD_CANCEL;
+
+        shortcut_menu_speak_item(gui_synclist_get_sel_pos(lists), NULL);
+        return ACTION_REDRAW;
+    }
+    return action;
+}
+
+static enum themable_icons shortcut_menu_get_icon(int selected_item, void * data)
+{
+    (void)data;
+    int icon;
+    struct shortcut *sc = get_shortcut(selected_item);
+    if (!sc)
+        return Icon_NOICON;
+    if (sc->icon == Icon_NOICON)
+    {
+
+        switch (sc->type)
+        {
+            case SHORTCUT_FILE:
+                return filetype_get_icon(filetype_get_attr(sc->u.path));
+            case SHORTCUT_BROWSER:
+                icon = filetype_get_icon(filetype_get_attr(sc->u.path));
+                if (icon <= 0)
+                    icon = Icon_Folder;
+                return icon;
+            case SHORTCUT_SETTING:
+                return Icon_Menu_setting;
+            case SHORTCUT_DEBUGITEM:
+                return Icon_Menu_functioncall;
+            case SHORTCUT_PLAYLISTMENU:
+                return Icon_Playlist;
+            case SHORTCUT_SHUTDOWN:
+            case SHORTCUT_REBOOT:
+                return Icon_System_menu;
+            case SHORTCUT_TIME:
+                return Icon_Menu_functioncall;
+            default:
+                break;
+        }
+    }
+    return sc->icon;
+}
 
 int do_shortcut_menu(void *ignored)
 {
@@ -608,7 +642,7 @@ int do_shortcut_menu(void *ignored)
 
     if (shortcut_count == 0)
     {
-        splash(HZ, str(LANG_NO_FILES));
+        splash(HZ, ID2P(LANG_NO_FILES));
         return GO_TO_PREVIOUS;
     }
     push_current_activity(ACTIVITY_SHORTCUTSMENU);
@@ -703,19 +737,30 @@ int do_shortcut_menu(void *ignored)
 #endif
                         sys_poweroff();
                     break;
+                case SHORTCUT_REBOOT:
+#if CONFIG_CHARGING
+                    if (charger_inserted())
+                        charging_splash();
+                    else
+#endif
+                        sys_reboot();
+                    break;
                 case SHORTCUT_TIME:
 #if CONFIG_RTC
-                  if (sc->u.timedata.talktime) {
-                        talk_timedate();
-                        talk_force_enqueue_next();
-                  } else
+                  if (!sc->u.timedata.talktime)
 #endif
                     {
                         char timer_buf[10];
-                        set_sleeptimer_duration(sc->u.timedata.sleep_timeout);
-                        splashf(HZ, "%s (%s)", str(LANG_SLEEP_TIMER),
-                                sleep_timer_formatter(timer_buf, sizeof(timer_buf),
-                                                      sc->u.timedata.sleep_timeout, NULL));
+                        if (sc->u.timedata.sleep_timeout >= 0)
+                        {
+                            set_sleeptimer_duration(sc->u.timedata.sleep_timeout);
+                            splashf(HZ, "%s (%s)", str(LANG_SLEEP_TIMER),
+                                    format_sleeptimer(timer_buf, sizeof(timer_buf),
+                                                          sc->u.timedata.sleep_timeout,
+                                                          NULL));
+                        }
+                        else
+                            toggle_sleeptimer();
                     }
                     break;
                 case SHORTCUT_UNDEFINED:

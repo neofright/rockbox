@@ -163,7 +163,7 @@ enum { SHOW_ALL, SHOW_SUPPORTED, SHOW_MUSIC, SHOW_PLAYLIST, SHOW_ID3DB,
 
 /* file and dir sort options */
 enum { SORT_ALPHA, SORT_DATE, SORT_DATE_REVERSED, SORT_TYPE, /* available as settings */
-       SORT_ALPHA_REVERSED, SORT_TYPE_REVERSED };            /* internal use only */
+       SORT_ALPHA_REVERSED, SORT_TYPE_REVERSED, SORT_AS_FILE }; /* internal use only */
 enum { SORT_INTERPRET_AS_DIGIT, SORT_INTERPRET_AS_NUMBER };
 
 /* recursive dir insert options */
@@ -898,6 +898,9 @@ struct user_settings
     (CONFIG_KEYPAD == IPOD_4G_PAD) || \
     (CONFIG_KEYPAD == IRIVER_H10_PAD)
     bool clear_settings_on_hold;
+#endif
+#if defined(HAVE_EROS_QN_CODEC)
+    int stereosw_mode; /* indicates normal, reverse, always 0, always 1 operation */
 #endif
 };
 
