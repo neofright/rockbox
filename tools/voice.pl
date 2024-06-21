@@ -141,7 +141,7 @@ my %piper_lang_map = (
     'francais' => 'fr_FR-siwis-medium.onnx',
     'greek' => 'el_GR-rapunzelina-low.onnx',
     'magyar' => 'hu_HU-anna-medium.onnx',
-    'italiano' => 'it_IT-riccardo-x_low.onnx',
+    'italiano' => 'it_IT-paola-medium.onnx',
 #    'japanese' => '-vja',
     'nederlands' => 'nl_NL-mls-medium.onnx',
     'norsk' => 'no_NO-talesyntese-medium.onnx',
@@ -511,6 +511,14 @@ sub generateclips {
                     if (defined($ENV{'POOL'})) {
 			copy($enc, $pool_file);
                     }
+		    # Special cases
+		    if ($id eq "VOICE_INVALID_VOICE_FILE") {
+			copy ($enc, "InvalidVoice_$language.talk");
+		    }
+		    if ($id eq "VOICE_LANG_NAME") {
+			copy ($enc, "$language.lng.talk");
+		    }
+
                     unlink($wav);
                 }
                 $voice = "";
@@ -658,9 +666,9 @@ if ($V == 1) {
     $SIG{INT} = \&panic_cleanup;
     $SIG{KILL} = \&panic_cleanup;
 
-    printf("Generating voice\n  Target: %s\n  Language: %s\n  Encoder (options): %s (%s)\n  TTS Engine (options): %s (%s)\n",
+    printf("Generating voice\n  Target: %s\n  Language: %s\n  Encoder (options): %s (%s)\n  TTS Engine (options): %s (%s)\n  Pool directory: %s\n",
            defined($t) ? $t : "unknown",
-           $l, $e, $E, $s, $S);
+           $l, $e, $E, $s, $S, defined($ENV{'POOL'}) ? $ENV{'POOL'} : "<none>");
     generateclips($l, $t, $e, $E, $tts_object, $S, $f);
     shutdown_tts($tts_object);
     createvoice($l, $i, $f);

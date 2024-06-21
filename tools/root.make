@@ -228,7 +228,7 @@ clean::
 		manual *.pdf *.a credits.raw rockbox.ipod bitmaps \
 		pluginbitmaps UI256.bmp rockbox-full.zip html txt \
 		rockbox-manual*.zip sysfont.h rockbox-info.txt voicefontids \
-		*.wav *.mp3 *.voice $(CLEANOBJS) \
+		*.wav *.mp3 *.voice *.talk $(CLEANOBJS) \
 		$(LINKRAM) $(LINKROM) rockbox.elf rockbox.map rockbox.bin \
 		make.dep rombox.elf rombox.map rombox.bin romstart.txt \
 		$(BINARY) $(FLASHFILE) uisimulator bootloader flash $(BOOTLINK) \
@@ -374,6 +374,10 @@ ifdef TTS_ENGINE
 
 voice: voicetools $(BUILDDIR)/apps/features
 	$(SILENT)for f in `cat $(BUILDDIR)/apps/features`; do feat="$$feat:$$f" ; done ; \
+	if [ -z "$$POOL" ] ; then \
+		export POOL="$(BUILDDIR)/voice-pool" ; \
+	fi;\
+	mkdir -p $${POOL} ;\
 	for lang in `echo $(VOICELANGUAGE) |sed "s/,/ /g"`; do $(TOOLSDIR)/voice.pl -V -l=$$lang -t=$(MODELNAME)$$feat -i=$(TARGET_ID) -e="$(ENCODER)" -E="$(ENC_OPTS)" -s=$(TTS_ENGINE) -S="$(TTS_OPTS)"; done
 
 talkclips: voicetools

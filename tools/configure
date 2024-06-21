@@ -260,7 +260,11 @@ simcc () {
 
  app_type=$1
  winbuild=""
- GCCOPTS=`echo $CCOPTS | sed -e s/-ffreestanding// -e s/-nostdlib// -e s/-Wundef//`
+ GCCOPTS=`echo $CCOPTS | sed -e s/\ -ffreestanding// -e s/\ -nostdlib// -e s/\ -Wundef//`
+
+ if [ "yes" = "$use_debug" ]; then
+    GCCOPTS=`echo $GCCOPTS | sed -e s/\ -Os/\ -Og/`
+ fi
 
  GCCOPTS="$GCCOPTS -fno-builtin -g"
 
@@ -945,13 +949,14 @@ whichadvanced () {
     echo ""
     printf "Enter your developer options (press only enter when done)\n\
 (D)EBUG, (L)ogf, Boot(c)hart, (S)imulator, (P)rofiling, (V)oice, (U)SB Serial, (W)in32 crosscompile,\n\
-Win(6)4 crosscompile, (T)est plugins, (O)mit plugins, S(m)all C lib, Logf to Ser(i)al port:"
+Win(6)4 crosscompile, (T)est plugins, (O)mit plugins, S(m)all C lib, Logf to Ser(i)al port, LTO (B)uild "
     if [ "$modelname" = "iaudiom5" ]; then
       printf ", (F)M radio MOD"
     fi
     if [ "$modelname" = "iriverh120" ]; then
       printf ", (R)TC MOD"
     fi
+    printf ":"
     echo ""
   fi
 
@@ -1043,6 +1048,10 @@ Win(6)4 crosscompile, (T)est plugins, (O)mit plugins, S(m)all C lib, Logf to Ser
         win32crosscompile="yes"
         win64="yes"
         ;;
+       [Bb])
+        echo "LTO build enabled"
+        LTO_ARG="export USE_LTO=y"
+        ;;
       "") # Match enter press when finished with advanced options
         cont=0
         ;;
@@ -1069,6 +1078,9 @@ Win(6)4 crosscompile, (T)est plugins, (O)mit plugins, S(m)all C lib, Logf to Ser
     for thislang in `echo $voicelanguage | sed 's/,/ /g'`; do
       voiceconfig "$thislang"
     done
+    if [ -z "$POOL" ] ; then
+	echo " \$POOL is not set, will use <builddir>/voice-pool by default"
+    fi
   fi
   if [ "yes" = "$use_debug" ]; then
     debug="-DDEBUG"
@@ -3933,7 +3945,7 @@ fi
     bmp2rb_mono="$rootdir/tools/bmp2rb -f 0"
     bmp2rb_native="$bmp2rb_mono"
     output="rockbox.x3"
-    appextra="recorder:gui:radio"
+    appextra="recorder:gui"
     plugins="yes"
     toolset=$genericbitmaptools
     boottool="cp"
@@ -4806,6 +4818,7 @@ export ANDROID_PLATFORM_VERSION=${ANDROID_PLATFORM_VERSION}
 export TOOLSET=${toolset}
 export PIPER_MODEL_DIR=${PIPER_MODEL_DIR}
 $CCACHE_ARG
+$LTO_ARG
 
 CONFIGURE_OPTIONS=${cmdline}
 

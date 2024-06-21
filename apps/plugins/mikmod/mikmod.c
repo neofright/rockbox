@@ -236,7 +236,7 @@ static int change_filename(int direct)
 
     if (entries == 0)
     {
-        rb->splash(HZ, "No supported files");
+        rb->splash(HZ, ID2P(LANG_NO_FILES));
         return PLUGIN_ERROR;
     }
 
@@ -378,7 +378,7 @@ static void showinstruments(void)
     rb->lcd_clear_display();
     for( i=0; i<MAX_LINES && i+vscroll<module->numins; i++ )
     {
-        sprintf(statustext, "%02d %s", i+vscroll+1, module->instruments[i+vscroll].insname);
+        sprintf(statustext, "%02d %s", i+vscroll+1, module->instruments[i+vscroll].insname ? module->instruments[i+vscroll].insname : "[n/a]");
         rb->lcd_putsxy(1, 1+(8*i), statustext);
     }
     rb->lcd_update();
@@ -570,7 +570,7 @@ static int settings_menu(void)
 {
     int selection = 0;
 
-    MENUITEM_STRINGLIST(settings_menu, "Mikmod Settings", NULL,
+    MENUITEM_STRINGLIST(settings_menu, ID2P(LANG_MIKMOD_SETTINGS), NULL,
                         ID2P(LANG_PANNING_SEPARATION),
                         ID2P(LANG_REVERBERATION),
                         ID2P(LANG_INTERPOLATION),
@@ -582,55 +582,54 @@ static int settings_menu(void)
                         ID2P(LANG_CPU_BOOST)
 #endif
                         );
-
     do
     {
         selection=rb->do_menu(&settings_menu,&selection, NULL, false);
         switch(selection)
         {
         case 0:
-            rb->set_int(rb->str(LANG_PANNING_SEPARATION), "", 1,
+            rb->set_int("Panning Separation", "", 1,
                         &(settings.pansep),
                         NULL, 8, 0, 128, NULL );
             applysettings();
             break;
 
         case 1:
-            rb->set_int(rb->str(LANG_REVERBERATION), "", 1,
+            rb->set_int("Reverberation", "", 1,
                         &(settings.reverb),
                         NULL, 1, 0, 15, NULL );
             applysettings();
             break;
 
         case 2:
-            rb->set_bool(rb->str(LANG_INTERPOLATION), &(settings.interp));
+            rb->set_bool("Interpolation", &(settings.interp));
             applysettings();
             break;
 
         case 3:
-            rb->set_bool(rb->str(LANG_SWAP_CHANNELS), &(settings.reverse));
+            rb->set_bool("Reverse Channels", &(settings.reverse));
             applysettings();
             break;
 
         case 4:
-            rb->set_bool(rb->str(LANG_MIKMOD_SURROUND), &(settings.surround));
+            rb->set_bool("Surround", &(settings.surround));
             applysettings();
             break;
 
         case 5:
-            rb->set_bool(rb->str(LANG_MIKMOD_HQMIXER), &(settings.hqmixer));
+            rb->set_bool("HQ Mixer", &(settings.hqmixer));
             applysettings();
             break;
 
         case 6:
-            rb->set_option(rb->str(LANG_MIKMOD_SAMPLERATE), &(settings.sample_rate), RB_INT, sr_names,
+            rb->set_option("Sample Rate", &(settings.sample_rate), RB_INT, sr_names,
                            HW_NUM_FREQ, NULL);
             applysettings();
             break;
 
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
         case 7:
-            rb->set_bool(rb->str(LANG_CPU_BOOST), &(settings.boost));
+            rb->set_bool("CPU Boost", &(settings.boost));
             applysettings();
             break;
 #endif
@@ -650,7 +649,7 @@ static int main_menu(void)
     int selection = 0;
     int result;
 
-    MENUITEM_STRINGLIST(main_menu,"Mikmod Main Menu",NULL,
+    MENUITEM_STRINGLIST(main_menu,ID2P(LANG_MIKMOD_MENU), NULL,
                         ID2P(LANG_SETTINGS),
                         ID2P(LANG_RETURN),
                         ID2P(LANG_MENU_QUIT));
@@ -704,7 +703,12 @@ static void thread(void)
 
 static void mm_errorhandler(void)
 {
-    rb->splashf(HZ, "%s", MikMod_strerror(MikMod_errno));
+    if (rb->global_settings->talk_menu) {
+        rb->talk_id(LANG_ERROR_FORMATSTR, true);
+        rb->talk_value_decimal(MikMod_errno, UNIT_INT, 0, true);
+        rb->talk_force_enqueue_next();
+    }
+    rb->splashf(HZ, rb->str(LANG_ERROR_FORMATSTR), MikMod_strerror(MikMod_errno));
     quit = true;
 }
 
@@ -717,13 +721,18 @@ static int playfile(char* filename)
 
     playingtime = 0;
 
-    rb->splashf(HZ, "Loading %s", filename);
+    if (rb->global_settings->talk_menu) {
+        rb->talk_id(LANG_WAIT, true);
+        rb->talk_file_or_spell(NULL, filename, NULL, true);
+        rb->talk_force_enqueue_next();
+    }
+    rb->splashf(HZ, "%s %s", rb->str(LANG_WAIT), filename);
 
     module = Player_Load(filename, 64, 0);
 
     if (!module)
     {
-        rb->splashf(HZ, "%s", MikMod_strerror(MikMod_errno));
+        mm_errorhandler();
         retval = PLUGIN_ERROR;
         quit = true;
     }
@@ -745,7 +754,7 @@ static int playfile(char* filename)
         IF_PRIO(, PRIORITY_PLAYBACK)
         IF_COP(, CPU))) == 0)
     {
-        rb->splash(HZ, "Cannot create thread!");
+        rb->splashf(HZ, ID2P(LANG_ERROR_FORMATSTR), "Cannot create thread!");
         return PLUGIN_ERROR;
     }
 #endif
@@ -927,7 +936,7 @@ enum plugin_status plugin_start(const void* parameter)
 
     if (parameter == NULL)
     {
-        rb->splash(HZ*2, " Play .mod, .it, .s3m, .xm file ");
+        rb->splash(HZ*2, ID2P(LANG_NO_FILES));
         return PLUGIN_OK;
     }
 
@@ -978,7 +987,7 @@ enum plugin_status plugin_start(const void* parameter)
 
     if (MikMod_Init(""))
     {
-        rb->splashf(HZ, "%s", MikMod_strerror(MikMod_errno));
+        mm_errorhandler();
         return PLUGIN_ERROR;
     }
 
