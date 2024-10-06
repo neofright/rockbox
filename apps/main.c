@@ -78,6 +78,10 @@
 #include "bootchart.h"
 #include "logdiskf.h"
 #include "bootdata.h"
+#if defined(HAVE_DEVICEDATA)
+#include "devicedata.h"
+#endif
+
 #if (CONFIG_PLATFORM & PLATFORM_ANDROID)
 #include "notification.h"
 #endif
@@ -131,6 +135,12 @@
 #define MAIN_NORETURN_ATTR
 #endif
 
+#if (CONFIG_PLATFORM & PLATFORM_HOSTED)
+#ifdef HAVE_MULTIVOLUME
+#include "pathfuncs.h" /* for init_volume_names */
+#endif
+#endif
+
 #if (CONFIG_PLATFORM & (PLATFORM_SDL|PLATFORM_MAEMO|PLATFORM_PANDORA))
 #ifdef SIMULATOR
 #include "sim_tasks.h"
@@ -170,6 +180,9 @@ int main(void)
     }
     list_init();
     tree_init();
+#if defined(HAVE_DEVICEDATA) && !defined(BOOTLOADER) /* SIMULATOR */
+    verify_device_data();
+#endif
     /* Keep the order of this 3
      * Must be done before any code uses the multi-screen API */
 #ifdef HAVE_USBSTACK
@@ -381,6 +394,9 @@ static void init(void)
     powermgmt_init();
     backlight_init();
     unicode_init();
+#ifdef HAVE_MULTIVOLUME
+    init_volume_names();
+#endif
 #ifdef SIMULATOR
     sim_tasks_init();
 #endif
@@ -448,6 +464,10 @@ static void init(void)
 
 #if defined(HAVE_BOOTDATA) && !defined(BOOTLOADER)
     verify_boot_data();
+#endif
+
+#if defined(HAVE_DEVICEDATA) && !defined(BOOTLOADER)
+    verify_device_data();
 #endif
 
     /* early early early! */
@@ -604,7 +624,7 @@ static void init(void)
         {
             lcd_clear_display();
             lcd_puts(0, 0, "No partition");
-            lcd_puts(0, 1, "found.");
+            lcd_putsf(0, 1, "found (%d).", rc);
 #ifndef USB_NONE
             lcd_puts(0, 2, "Insert USB cable");
             lcd_puts(0, 3, "and fix it.");

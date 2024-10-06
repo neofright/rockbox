@@ -33,6 +33,8 @@
 #include "pathfuncs.h"
 #include "string-extra.h"
 
+int os_volume_path(IF_MV(int volume, ) char *buffer, size_t bufsize);
+
 #define SAME_FILE_INFO(sb1p, sb2p) \
     ((sb1p)->st_dev == (sb2p)->st_dev && (sb1p)->st_ino == (sb2p)->st_ino)
 
@@ -207,9 +209,9 @@ int os_opendir_and_fd(const char *osdirname, DIR **osdirpp, int *osfdp)
 }
 
 /* do we really need this in the app? (in the sim, yes) */
-void volume_size(IF_MV(int volume,) unsigned long *sizep, unsigned long *freep)
+void volume_size(IF_MV(int volume,) sector_t *sizep, sector_t *freep)
 {
-    unsigned long size = 0, free = 0;
+    sector_t size = 0, free = 0;
     char volpath[MAX_PATH];
     struct statfs fs;
 

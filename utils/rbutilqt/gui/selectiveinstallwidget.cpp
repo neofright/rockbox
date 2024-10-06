@@ -409,6 +409,17 @@ void SelectiveInstallWidget::installBootloader(void)
     }
 }
 
+void SelectiveInstallWidget::installBootloaderHints()
+{
+    if(ui.bootloaderCheckbox->isChecked()) {
+        QString msg = BootloaderInstallHelper::preinstallHints(
+                RbSettings::value(RbSettings::Platform).toString());
+        if(!msg.isEmpty()) {
+            QMessageBox::information(this, tr("Manual steps required"), msg);
+        }
+    }
+}
+
 void SelectiveInstallWidget::installBootloaderPost()
 {
     // don't do anything if no bootloader install has been done.
@@ -610,6 +621,7 @@ static const struct {
     { "Quake",         "games/quake.rock",        PlayerBuildInfo::QuakeUrl     },
     { "Puzzles fonts", "games/sgt-blackbox.rock", PlayerBuildInfo::PuzzFontsUrl },
     { "Wolf3D",        "games/wolf3d.rock",       PlayerBuildInfo::Wolf3DUrl    },
+    { "XRick",         "games/xrick.rock",        PlayerBuildInfo::XRickUrl     },
     { "XWorld",        "games/xworld.rock",       PlayerBuildInfo::XWorldUrl    },
     { "MIDI Patchset", "viewers/midi.rock",       PlayerBuildInfo::MidiPatchsetUrl },
 };

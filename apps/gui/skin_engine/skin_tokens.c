@@ -66,6 +66,7 @@
 #include "fixedpoint.h"
 #endif
 #include "list.h"
+#include "option_select.h"
 #include "wps.h"
 
 #define NOINLINE __attribute__ ((noinline))
@@ -73,7 +74,7 @@
 static const char* get_codectype(const struct mp3entry* id3)
 {
     if (id3 && id3->codectype < AFMT_NUM_CODECS) {
-        return audio_formats[id3->codectype].label;
+        return get_codec_string(id3->codectype);
     } else {
         return NULL;
     }
@@ -555,20 +556,29 @@ static struct mp3entry* get_mp3entry_from_offset(int offset, char **filename)
         pid3 = state->nid3;
     else
     {
-        static char filename_buf[MAX_PATH + 1];
-        fname = playlist_peek(offset, filename_buf, sizeof(filename_buf));
+        static struct mp3entry tempid3; /* Note: path gets passed to outside fns */
+        memset(&tempid3, 0, sizeof(struct mp3entry));
+        /*static char filename_buf[MAX_PATH + 1];removed g#5926 */
+        fname = playlist_peek(offset, tempid3.path, sizeof(tempid3.path));
         *filename = (char*)fname;
-        static struct mp3entry tempid3;
+
         if (
 #if defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE)
-            tagcache_fill_tags(&tempid3, fname) ||
+            tagcache_fill_tags(&tempid3, NULL) ||
 #endif
             audio_peek_track(&tempid3, offset)
         )
         {
             pid3 = &tempid3;
         }
+        else /* failed */
+        {
+            /* ensure *filename gets the path, audio_peek_track() cleared it */
+            fname = playlist_peek(offset, tempid3.path, sizeof(tempid3.path));
+            *filename = (char*)fname;
+        }
     }
+
     return pid3;
 }
 
@@ -658,6 +668,23 @@ static const char* NOINLINE get_lif_token_value(struct gui_wps *gwps,
     return NULL;
 }
 
+#ifdef HAVE_QUICKSCREEN
+static const char* get_qs_token_value(enum quickscreen_item item, bool data_token,
+                                       char *buf, int buf_size)
+{
+    const struct settings_list *qs_setting = global_settings.qs_items[item];
+
+    if (qs_setting == NULL)
+        return "ERR";
+
+    if (data_token)
+        return option_get_valuestring(qs_setting, buf, buf_size,
+                                      option_value_as_int(qs_setting));
+
+    return P2STR(ID2P(qs_setting->lang_id));
+}
+#endif
+
 /* Return the tags value as text. buf should be used as temp storage if needed.
 
    intval is used with conditionals/enums: when this function is called,
@@ -692,8 +719,6 @@ const char *get_token_value(struct gui_wps *gwps,
         return NULL;
 
     id3 = get_mp3entry_from_offset(token->next? 1: offset, &filename);
-    if (id3)
-        filename = id3->path;
 
 #if CONFIG_RTC
     struct tm* tm = NULL;
@@ -1372,6 +1397,25 @@ const char *get_token_value(struct gui_wps *gwps,
             return "t";
 #else
             return NULL;
+#endif
+
+#ifdef HAVE_QUICKSCREEN
+        case SKIN_TOKEN_TOP_QUICKSETTING_NAME:
+            return get_qs_token_value(QUICKSCREEN_TOP, false, buf, buf_size);
+        case SKIN_TOKEN_TOP_QUICKSETTING_VALUE:
+            return get_qs_token_value(QUICKSCREEN_TOP, true, buf, buf_size);
+        case SKIN_TOKEN_RIGHT_QUICKSETTING_NAME:
+            return get_qs_token_value(QUICKSCREEN_RIGHT, false, buf, buf_size);
+        case SKIN_TOKEN_RIGHT_QUICKSETTING_VALUE:
+            return get_qs_token_value(QUICKSCREEN_RIGHT, true, buf, buf_size);
+        case SKIN_TOKEN_BOTTOM_QUICKSETTING_NAME:
+            return get_qs_token_value(QUICKSCREEN_BOTTOM, false, buf, buf_size);
+        case SKIN_TOKEN_BOTTOM_QUICKSETTING_VALUE:
+            return get_qs_token_value(QUICKSCREEN_BOTTOM, true, buf, buf_size);
+        case SKIN_TOKEN_LEFT_QUICKSETTING_NAME:
+            return get_qs_token_value(QUICKSCREEN_LEFT, false, buf, buf_size);
+        case SKIN_TOKEN_LEFT_QUICKSETTING_VALUE:
+            return get_qs_token_value(QUICKSCREEN_LEFT, true, buf, buf_size);
 #endif
 
         case SKIN_TOKEN_SETTING:

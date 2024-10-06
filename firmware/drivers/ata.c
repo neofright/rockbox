@@ -109,15 +109,15 @@ static long last_disk_activity = -1;
 static long power_off_tick = 0;
 #endif
 
-static unsigned long total_sectors;
+static sector_t total_sectors;
 static int multisectors; /* number of supported multisectors */
-static unsigned short identify_info[SECTOR_SIZE/2];
+static unsigned short identify_info[ATA_IDENTIFY_WORDS];
 
 #ifdef MAX_PHYS_SECTOR_SIZE
 
 struct sector_cache_entry {
     bool inuse;
-    unsigned long sectornum;  /* logical sector */
+    sector_t sectornum;  /* logical sector */
     unsigned char data[MAX_PHYS_SECTOR_SIZE];
 };
 /* buffer for reading and writing large physical sectors */
@@ -381,7 +381,7 @@ static ICODE_ATTR void copy_write_sectors(const unsigned char* buf,
 }
 #endif /* !ATA_OPTIMIZED_WRITING */
 
-static int ata_transfer_sectors(unsigned long start,
+static int ata_transfer_sectors(uint64_t start,
                                 int incount,
                                 void* inbuf,
                                 int write)
@@ -443,9 +443,9 @@ static int ata_transfer_sectors(unsigned long start,
             ATA_OUT8(ATA_NSECTOR, count & 0xff);
             ATA_OUT8(ATA_SECTOR, (start >> 24) & 0xff); /* 31:24 */
             ATA_OUT8(ATA_SECTOR, start & 0xff); /* 7:0 */
-            ATA_OUT8(ATA_LCYL, 0); /* 39:32 */
+            ATA_OUT8(ATA_LCYL, (start >> 32) & 0xff); /* 39:32 */
             ATA_OUT8(ATA_LCYL, (start >> 8) & 0xff); /* 15:8 */
-            ATA_OUT8(ATA_HCYL, 0); /* 47:40 */
+            ATA_OUT8(ATA_HCYL, (start >> 40) & 0xff); /* 47:40 */
             ATA_OUT8(ATA_HCYL, (start >> 16) & 0xff); /* 23:16 */
             ATA_OUT8(ATA_SELECT, SELECT_LBA | ata_device);
 #ifdef HAVE_ATA_DMA
@@ -592,7 +592,7 @@ static int ata_transfer_sectors(unsigned long start,
 
 #ifndef MAX_PHYS_SECTOR_SIZE
 int ata_read_sectors(IF_MD(int drive,)
-                     unsigned long start,
+                     sector_t start,
                      int incount,
                      void* inbuf)
 {
@@ -607,7 +607,7 @@ int ata_read_sectors(IF_MD(int drive,)
 }
 
 int ata_write_sectors(IF_MD(int drive,)
-                      unsigned long start,
+                      sector_t start,
                       int count,
                       const void* buf)
 {
@@ -623,7 +623,7 @@ int ata_write_sectors(IF_MD(int drive,)
 #endif /* ndef MAX_PHYS_SECTOR_SIZE */
 
 #ifdef MAX_PHYS_SECTOR_SIZE
-static int cache_sector(unsigned long sector)
+static int cache_sector(sector_t sector)
 {
     int rc;
 
@@ -652,7 +652,7 @@ static inline int flush_current_sector(void)
 }
 
 int ata_read_sectors(IF_MD(int drive,)
-                     unsigned long start,
+                     sector_t start,
                      int incount,
                      void* inbuf)
 {
@@ -718,7 +718,7 @@ int ata_read_sectors(IF_MD(int drive,)
 }
 
 int ata_write_sectors(IF_MD(int drive,)
-                      unsigned long start,
+                      sector_t start,
                       int count,
                       const void* buf)
 {
@@ -845,7 +845,7 @@ void ata_spindown(int seconds)
 
 bool ata_disk_is_active(void)
 {
-    return ata_state >= ATA_SPINUP;
+    return ata_disk_can_poweroff() ? (ata_state >= ATA_SPINUP) : 0;
 }
 
 void ata_sleepnow(void)
@@ -916,7 +916,7 @@ static int identify(void)
         return -2;
     }
 
-    for (i=0; i<SECTOR_SIZE/2; i++) {
+    for (i=0; i<ATA_IDENTIFY_WORDS; i++) {
         /* the IDENTIFY words are already swapped, so we need to treat
            this info differently that normal sector data */
         identify_info[i] = ATA_SWAP_IDENTIFY(ATA_IN16(ATA_DATA));
@@ -962,8 +962,8 @@ static int perform_soft_reset(void)
     if (identify())
         return -5;
 
-    if (set_features())
-        return -2;
+    if ((ret = set_features()))
+        return -60 + ret;
 
     if (set_multiple_mode(multisectors))
         return -3;
@@ -1013,7 +1013,7 @@ static int ata_power_on(void)
 
     rc = set_features();
     if (rc)
-        return rc * 10 - 2;
+        return -60 + rc;
 
     if (set_multiple_mode(multisectors))
         return -3;
@@ -1269,10 +1269,8 @@ int STORAGE_INIT_ATTR ata_init(void)
         if (identify_info[83] & 0x0400       /* 48 bit address support */
             && total_sectors == 0x0FFFFFFF)  /* and disk size >= 128 GiB */
         {                                    /* (needs BigLBA addressing) */
-            if (identify_info[102] || identify_info[103])
-                panicf("Unsupported disk size: >= 2^32 sectors");
+            total_sectors = identify_info[100] | (identify_info[101] << 16) | ((uint64_t)identify_info[102] << 32) | ((uint64_t)identify_info[103] << 48);
 
-            total_sectors = identify_info[100] | (identify_info[101] << 16);
             lba48 = true; /* use BigLBA */
         }
 #endif /* HAVE_LBA48 */
@@ -1284,7 +1282,7 @@ int STORAGE_INIT_ATTR ata_init(void)
             goto error;
         }
 
-        rc = set_features();
+        rc = set_features(); // rror codes are between -1 and -49
         if (rc) {
             rc = -60 + rc;
             goto error;
@@ -1321,7 +1319,7 @@ int STORAGE_INIT_ATTR ata_init(void)
     }
     rc = set_multiple_mode(multisectors);
     if (rc)
-        rc = -70 + rc;
+        rc = -100 + rc;
 
 error:
     mutex_unlock(&ata_mtx);
@@ -1360,7 +1358,13 @@ void ata_get_info(IF_MD(int drive,)struct storage_info *info)
     (void)drive; /* unused for now */
 #endif
     int i;
-    info->sector_size = SECTOR_SIZE;
+
+    /* Logical sector size */
+    if ((identify_info[106] & 0xd000) == 0x5000)
+        info->sector_size = identify_info[117] | (identify_info[118] << 16);
+    else
+        info->sector_size = SECTOR_SIZE;
+
     info->num_sectors = total_sectors;
 
     src = (unsigned short*)&identify_info[27];

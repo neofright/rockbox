@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#define METADATA_EXCLUDE_ID3_PATH (0x01) /* don't copy filename path to the id3 path buffer */
+#define METADATA_CLOSE_FD_ON_EXIT (0x02) /* close the filedescriptor when finished */
 /* Audio file types. */
 /* NOTE: The values of the AFMT_* items are used for the %fc tag in the WPS
          - so new entries MUST be added to the end to maintain compatibility.
@@ -323,13 +325,14 @@ struct mp3entry {
 
 unsigned int probe_file_format(const char *filename);
 bool get_metadata(struct mp3entry* id3, int fd, const char* trackname);
-bool mp3info(struct mp3entry *entry, const char *filename);
+bool get_metadata_ex(struct mp3entry* id3, int fd, const char* trackname, int flags);
 void adjust_mp3entry(struct mp3entry *entry, void *dest, const void *orig);
 void copy_mp3entry(struct mp3entry *dest, const struct mp3entry *orig);
 void wipe_mp3entry(struct mp3entry *id3);
 
 void fill_metadata_from_path(struct mp3entry *id3, const char *trackname);
 int get_audio_base_codec_type(int type);
+const char * get_codec_string(int type);
 bool rbcodec_format_is_atomic(int afmt);
 bool format_buffers_with_offset(int afmt);
 

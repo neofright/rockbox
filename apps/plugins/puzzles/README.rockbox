@@ -4,11 +4,6 @@ Introduction
 This is the readme for the Rockbox port of Simon Tatham's Portable
 Puzzle Collection.
 
-The upstream version used is subject to change, as it should be
-relatively trivial to update it to a newer version. Simply copying the
-upstream repo's contents into src/ and running genhelp.sh ought to do
-it (watch out for API changes, though!).
-
 Source structure
 ================
 
@@ -30,6 +25,46 @@ by genhelp.sh from the puzzles.but file in the source
 distribution. The compression is LZ4, implemented in lz4tiny.c (for
 decompression on target), and compress.c (for generation). genhelp.sh
 should be run whenever the documentation is changed.
+
+Upstreams
+=========
+
+As of 2024, Simon's tree is located at:
+
+https://git.tartarus.org/?p=simon/puzzles.git
+
+For a long time (i.e. 2017-2024), our version of the puzzles tree
+contained several modifications by myself (notably cursor interfaces
+to Untangle and Palisade). These divergent changes complicated
+maintenance of this port, as merge conflicts often arose when upstream
+changes to these games conflicted with our changes. To remedy this, I
+sent most of these patches back upstream in summer 2024, and since
+then, Simon has merged them into his repo. We are now able to run with
+a fully unmodified puzzles source tree.
+
+Maintenance
+===========
+
+Simon's upstream tree sees continued development. The port is
+structured so that integrating new upstream versions is
+straightforward: all the upstream sources live in the src/
+subdirectory; all of the Rockbox frontend lives in the root
+apps/plugins/puzzles/ directory.
+
+The `resync.sh' shell script automates the resyncing process. It
+copies the upstream sources (point it to a local copy of the
+rockbox-devel branch above) into src/ and performs auto-generation of
+the help content. Note that a modified version of "halibut" (Simon's
+homegrown documentation processor) must be compiled from this source:
+
+https://github.com/built1n/halibut
+
+The LZ4 library and GCC are necessary as well.
+
+Wishlist
+========
+
+- Nothing!
 
 Kudos to Simon (duh), and Frank, for telling me about it.
 
@@ -64,3 +99,12 @@ May 2019: Resync to e2135d5.
 
 June 2020: Resync to 9aa7b7c. Fixed really embarrassing bug in loading
 saved games.
+
+July 2024: Resync to 1c62dac (branched from Simon's fd304c5).
+Implement user preferences menu. Introduced "Mosaic".
+
+August 2024: Resync to ee5e327 (branched from Simon's
+1c1899e). Changes default Map stipple size to "Small".
+
+August 2024: Resync to Simon's 262f709 (unmodified). Uses new scanline
+polygon filling algorithm. Updates drawing API.

@@ -107,7 +107,7 @@ int ramdisk_event(long id, intptr_t data);
 struct storage_info
 {
     unsigned int sector_size;
-    unsigned int num_sectors;
+    sector_t num_sectors;
     char *vendor;
     char *product;
     char *revision;
@@ -227,7 +227,7 @@ static inline void storage_sleep(void) {};
         #define storage_last_disk_activity() mmc_last_disk_activity()
         #define storage_spinup_time() 0
         #define storage_get_identify() mmc_get_identify()
-       
+
         #ifdef STORAGE_GET_INFO
             #define storage_get_info(drive, info) mmc_get_info(IF_MD(drive,) info)
         #endif
@@ -251,7 +251,7 @@ static inline void storage_sleep(void) {};
         #define storage_last_disk_activity() nand_last_disk_activity()
         #define storage_spinup_time() 0
         #define storage_get_identify() nand_get_identify()
-       
+
         #ifdef STORAGE_GET_INFO
             #define storage_get_info(drive, info) nand_get_info(IF_MD(drive,) info)
         #endif
@@ -275,7 +275,7 @@ static inline void storage_sleep(void) {};
         #define storage_last_disk_activity() ramdisk_last_disk_activity()
         #define storage_spinup_time() 0
         #define storage_get_identify() ramdisk_get_identify()
-       
+
         #ifdef STORAGE_GET_INFO
             #define storage_get_info(drive, info) ramdisk_get_info(IF_MD(drive,) info)
         #endif
@@ -310,11 +310,14 @@ void storage_get_info(int drive, struct storage_info *info);
 #ifdef HAVE_HOTSWAP
 bool storage_removable(int drive);
 bool storage_present(int drive);
+#else
+#define storage_removable(x) 0
+#define storage_present(x) 1
 #endif
 int storage_driver_type(int drive);
 
 #endif /* NOT CONFIG_STORAGE_MULTI and NOT SIMULATOR*/
 
-int storage_read_sectors(IF_MD(int drive,) unsigned long start, int count, void* buf);
-int storage_write_sectors(IF_MD(int drive,) unsigned long start, int count, const void* buf);
+int storage_read_sectors(IF_MD(int drive,) sector_t start, int count, void* buf);
+int storage_write_sectors(IF_MD(int drive,) sector_t start, int count, const void* buf);
 #endif

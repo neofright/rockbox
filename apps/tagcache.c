@@ -970,6 +970,7 @@ static int find_index(const char *filename)
 
 bool tagcache_find_index(struct tagcache_search *tcs, const char *filename)
 {
+    /* NOTE: on ret==true you need to call tagcache_search_finish(tcs) yourself */
     int idx_id;
 
     if (!tc_stat.ready)
@@ -1721,6 +1722,7 @@ static bool build_lookup_list(struct tagcache_search *tcs)
 
 bool tagcache_search(struct tagcache_search *tcs, int tag)
 {
+    /* NOTE: call tagcache_search_finish(&tcs) when finished or BAD things may happen (TM) */
     struct tagcache_header tag_hdr;
     struct master_header   master_hdr;
     int i;
@@ -2085,13 +2087,18 @@ bool tagcache_fill_tags(struct mp3entry *id3, const char *filename)
         return false;
 
     /* Find the corresponding entry in tagcache. */
+
+    if (filename != NULL)
+        memset(id3, 0, sizeof(struct mp3entry));
+    else /* Note: caller clears id3 prior to call */
+        filename = id3->path;
+
     idx_id = find_entry_ram(filename);
     if (idx_id < 0)
         return false;
 
     entry = &tcramcache.hdr->indices[idx_id];
-
-    memset(id3, 0, sizeof(struct mp3entry));
+   
     char* buf = id3->id3v2buf;
     ssize_t remaining = sizeof(id3->id3v2buf);
 
@@ -2193,7 +2200,6 @@ static void NO_INLINE add_tagcache(char *path, unsigned long mtime)
     struct mp3entry id3;
     struct temp_file_entry entry;
     bool ret;
-    int fd;
     int idx_id = -1;
     char tracknumfix[3];
     int offset = 0;
@@ -2266,21 +2272,16 @@ static void NO_INLINE add_tagcache(char *path, unsigned long mtime)
         }
     }
 
-    fd = open(path, O_RDONLY);
-    if (fd < 0)
-    {
-        logf("open fail: %s", path);
-        return ;
-    }
-
-    memset(&id3, 0, sizeof(struct mp3entry));
+    /*memset(&id3, 0, sizeof(struct mp3entry)); -- get_metadata does this for us */
     memset(&entry, 0, sizeof(struct temp_file_entry));
     memset(&tracknumfix, 0, sizeof(tracknumfix));
-    ret = get_metadata(&id3, fd, path);
-    close(fd);
+    ret = get_metadata_ex(&id3, -1, path, METADATA_EXCLUDE_ID3_PATH);
 
     if (!ret)
+    {
+        logf("get_metadata fail: %s", path);
         return ;
+    }
 
     logf("-> %s", path);
 
@@ -3937,6 +3938,7 @@ bool tagcache_create_changelog(struct tagcache_search *tcs)
     if (clfd < 0)
     {
         logf("failure to open changelog");
+        tagcache_search_finish(tcs);
         return false;
     }
 
@@ -3945,6 +3947,7 @@ bool tagcache_create_changelog(struct tagcache_search *tcs)
         if ( (tcs->masterfd = open_master_fd(&myhdr, false)) < 0)
         {
             close(clfd);
+            tagcache_search_finish(tcs);
             return false;
         }
     }

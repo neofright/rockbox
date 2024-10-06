@@ -311,6 +311,8 @@ simcc () {
    # add cross-compiler option(s)
    GCCOPTS="$GCCOPTS -Wno-format"
    LDOPTS="$LDOPTS -mconsole -static"
+   GLOBAL_LDOPTS=`echo $GLOBAL_LDOPTS | sed -e s/\-Wl,-z,defs//`
+   LDOPTS=`echo $LDOPTS | sed -e s/-ldl// -e s/-lrt// -e s/-lasound//`
    output="$output.exe"
    winbuild="yes"
 
@@ -433,6 +435,9 @@ simcc () {
         else
           echo "Your sdl-config does not know about static libs, falling back to shared library"
           sdlldopts=$($sdl --libs)
+#          if [ "$win32crosscompile" = "yes" ] ; then
+              LDOPTS=`echo $LDOPTS | sed -e s/-static//`
+#          fi
         fi
         GCCOPTS="$GCCOPTS ${sdlccopts}"
         LDOPTS="$LDOPTS ${sdlldopts}"
@@ -838,7 +843,7 @@ androidcc () {
             endian="little"
             gcctarget="i686-linux-android-"
             echo "${make_toolchain} --toolchain=x86-${gccchoice} --platform=android-android-$ANDROID_PLATFORM_VERSION --install-dir=${pwd}/android-toolchain"
-            ${make_toolchain} --toolchain=x86-${gccchoice} --platform=android-android-$ANDROID_PLATFORM_VERSION --install-dir=${pwd}/android-toolchain
+            ${make_toolchain} --toolchain=x86-${gccchoice} --platform=android-$ANDROID_PLATFORM_VERSION --install-dir=${pwd}/android-toolchain
             if [ ${?} != 0 ]; then
                 exit
             fi
@@ -1671,6 +1676,8 @@ cat <<EOF
  ==AIGO==                 244) M3K Linux
  245) Eros Q / K          246) M3K baremetal     ==Shanling==
  247) Eros Q / K native                          260) Q1
+ 248) Eros Q / K native v3 
+      (GC9A01 LCD Controller)
 EOF
 
   buildfor=`input`;
@@ -4185,7 +4192,38 @@ fi
     t_cpu="mips"
     t_manufacturer="ingenic_x1000"
     t_model="erosqnative"
+    # player version, for bootloader usage
+    # versions 1 and 2 both use 1
+    extradefines="$extradefines -DEROSQN_VER=1"
     ;;
+
+    248|erosqnative_v3)
+    target_id=117
+    modelname="erosqnative_v3"
+    target="EROS_QN"
+    memory=32
+    mipsr2elcc
+    appextra="recorder:gui"
+    plugins="yes"
+    tool="$rootdir/tools/scramble -add=erosqnative "
+    boottool="$rootdir/tools/mkspl-x1000 -type=nand -ppb=2 -bpp=2 "
+    output="rockbox.erosq"
+    bootoutput="bootloader.erosq"
+    sysfontbl="16-Terminus"
+    # toolset is the tools within the tools directory that we build for
+    # this particular target.
+    toolset="$x1000tools"
+    bmp2rb_mono="$rootdir/tools/bmp2rb -f 0"
+    bmp2rb_native="$rootdir/tools/bmp2rb -f 4"
+    # architecture, manufacturer and model for the target-tree build
+    t_cpu="mips"
+    t_manufacturer="ingenic_x1000"
+    t_model="erosqnative"
+    # player version, for bootloader usage
+    # version 3
+    extradefines="$extradefines -DEROSQN_VER=3"
+    ;;
+
 
    *)
     echo "Please select a supported target platform!"
@@ -4733,7 +4771,7 @@ cmdline=`echo $cmdline | sed -e s,--target=[a-zA-Z_0-9]\*,,g \
                             -e s,--ram=[0-9]\*,,g \
                             -e s,--rbdir=[./a-zA-Z0-9]\*,,g \
                             -e s,--voice=[-_./a-zA-Z0-9]\*,,g \
-                            -e s,--type=[a-zA-Z]\*,,g`
+                            -e s,--type=[a-zA-Z0-9]\*,,g`
 cmdline="$cmdline --target=\$(MODELNAME) --ram=\$(MEMORYSIZE) --rbdir=\$(RBDIR) --type=$btype$advopts"
 
 ### end of cmdline

@@ -9,8 +9,10 @@ tagcache/tagcache.c
 chessclock.c
 credits.c
 cube.c
+cue_playlist.c
 dart_scorer.c
 dict.c
+file_picker.c
 jackpot.c
 keybox.c
 keyremap.c

@@ -1218,7 +1218,10 @@ static int create_album_untagged(struct tagcache_search *tcs,
         {
             if (rb->button_get(false) > BUTTON_NONE) {
                 if (confirm_quit())
+                {
+                    rb->tagcache_search_finish(tcs);
                     return ERROR_USER_ABORT;
+                }
                 else
                 {
                     rb->lcd_clear_display();
@@ -4040,7 +4043,7 @@ static int show_id3_info(const char *selected_file)
     i = 0;
     do {
         file_name = i == 0 ? selected_file : get_track_filename(i);
-        if (rb->mp3info(&id3, file_name))
+        if (!rb->get_metadata(&id3, -1, file_name))
             return 0;
 
         if (is_multiple_tracks)

@@ -50,21 +50,17 @@
 
 /* TODO: Move target-specific stuff somewhere else (serial number reading) */
 
-#ifdef HAVE_AS3514
+#if defined(IPOD_ARCH) && defined(CPU_PP)
+// no need to include anything
+#elif defined(HAVE_AS3514)
 #include "ascodec.h"
 #include "as3514.h"
-#endif
-
-#if !defined(HAVE_AS3514) && !defined(IPOD_ARCH) && (CONFIG_STORAGE & STORAGE_ATA)
-#include "ata.h"
-#endif
-
-#if (CONFIG_CPU == IMX233)
+#elif (CONFIG_CPU == IMX233) && IMX233_SUBTARGET >= 3700
 #include "ocotp-imx233.h"
-#endif
-
-#ifdef SANSA_CONNECT
+#elif defined(SANSA_CONNECT)
 #include "cryptomem-sansaconnect.h"
+#elif (CONFIG_STORAGE & STORAGE_ATA)
+#include "ata.h"
 #endif
 
 #ifndef USB_MAX_CURRENT
@@ -287,7 +283,7 @@ static unsigned char response_data[256] USB_DEVBSS_ATTR;
 
 static const short hex[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
                         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-#ifdef IPOD_ARCH
+#if defined(IPOD_ARCH) && defined(CPU_PP)
 static void set_serial_descriptor(void)
 {
 #ifdef IPOD_VIDEO
@@ -363,17 +359,43 @@ static void set_serial_descriptor(void)
 {
     short* p = &usb_string_iSerial.wString[1];
     unsigned short* identify = ata_get_identify();
-    unsigned short x;
+    char sn[20];
+    char length = 20;
     int i;
 
-    for(i = 10; i < 20; i++) {
-       x = identify[i];
-       *p++ = hex[(x >> 12) & 0xF];
-       *p++ = hex[(x >> 8) & 0xF];
-       *p++ = hex[(x >> 4) & 0xF];
-       *p++ = hex[(x >> 0) & 0xF];
+    for (i = 0; i < length / 2; i++) {
+        ((unsigned short*)sn)[i] = htobe16(identify[i + 10]);
     }
-    usb_string_iSerial.bLength = 84;
+
+    char is_printable = 1;
+    for (i = 0; i < length; i++) {
+        if (sn[i] < 32 || sn[i] > 126) {
+            is_printable = 0;
+            break;
+        }
+    }
+
+    if (is_printable) {
+        /* trim trailing spaces */
+        while (length > 0 && sn[length - 1] == ' ') {
+            length--;
+        }
+
+        for (i = 0; i < length; i++) {
+            *p++ = sn[i];
+        }
+
+        usb_string_iSerial.bLength = 2 + 2 * (1 + length);
+    }
+    else {
+        for (i = 0; i < length; i++) {
+            char x = sn[i];
+            *p++ = hex[(x >> 4) & 0xF];
+            *p++ = hex[x & 0xF];
+        }
+
+        usb_string_iSerial.bLength = 2 + 2 * (1 + length * 2);
+    }
 }
 #elif (CONFIG_STORAGE & STORAGE_RAMDISK)
 /* This "serial number" isn't unique, but it should never actually

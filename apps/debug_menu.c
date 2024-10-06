@@ -124,12 +124,20 @@
 
 #include "talk.h"
 
+#if defined(HAVE_DEVICEDATA)// && !defined(SIMULATOR)
+#include "devicedata.h"
+#endif
+
 #if defined(HAVE_BOOTDATA) && !defined(SIMULATOR)
 #include "bootdata.h"
 #include "multiboot.h"
 #include "rbpaths.h"
 #include "pathfuncs.h"
 #include "rb-loader.h"
+#endif
+
+#if defined(IPOD_6G)
+#include "nor-target.h"
 #endif
 
 #define SCREEN_MAX_CHARS (LCD_WIDTH / SYSFONT_WIDTH)
@@ -553,14 +561,16 @@ static const char* dbg_partitions_getname(int selected_item, void *data,
     if (!disk_partinfo(partition, &p))
         return buffer;
 
+    // XXX fix this up to use logical sector size
+    // XXX and if mounted, show free info...
     if (selected_item%2)
     {
-        snprintf(buffer, buffer_len, "   T:%x %ld MB", p.type,
-                 p.size / ( 2048 / ( SECTOR_SIZE / 512 )));
+        snprintf(buffer, buffer_len, "   T:%x %llu MB", p.type,
+                 (uint64_t)(p.size / ( 2048 / ( SECTOR_SIZE / 512 ))));
     }
     else
     {
-        snprintf(buffer, buffer_len, "P%d: S:%lx", partition, p.start);
+        snprintf(buffer, buffer_len, "P%d: S:%llx", partition, (uint64_t)p.start);
     }
     return buffer;
 }
@@ -568,7 +578,7 @@ static const char* dbg_partitions_getname(int selected_item, void *data,
 static bool dbg_partitions(void)
 {
     struct simplelist_info info;
-    simplelist_info_init(&info, "Partition Info", NUM_DRIVES * 4, NULL);
+    simplelist_info_init(&info, "Partition Info", NUM_DRIVES * MAX_PARTITIONS_PER_DRIVE, NULL);
     info.selection_size = 2;
     info.scroll_all = true;
     info.get_name = dbg_partitions_getname;
@@ -1339,6 +1349,22 @@ static int disk_callback(int btn, struct gui_synclist *lists)
                     "R2W: *%d", card->r2w_factor);
 #if (CONFIG_STORAGE & STORAGE_SD)
             int csd_structure = card_extract_bits(card->csd, 127, 2);
+            const char *ver;
+            switch(csd_structure) {
+            case 0:
+                    ver = "1 (SD)";
+                    break;
+            case 1:
+                    ver = "2 (SDHC/SDXC)";
+                    break;
+            case 2:
+                    ver = "3 (SDUC)";
+                    break;
+            default:
+                    ver = "Unknown";
+                    break;
+            }
+            simplelist_addline("SDVer: %s\n", ver);
             if (csd_structure == 0) /* CSD version 1.0 */
 #endif
             {
@@ -1391,20 +1417,53 @@ static int disk_callback(int btn, struct gui_synclist *lists)
     for (i=39; i && buf[i]==' '; i--)
         buf[i] = 0;
     simplelist_addline("Model: %s", buf);
+    for (i=0; i < 10; i++)
+        ((unsigned short*)buf)[i]=htobe16(identify_info[i+10]);
+    buf[20]=0;
+    /* kill trailing space */
+    for (i=19; i && buf[i]==' '; i--)
+        buf[i] = 0;
+    simplelist_addline("Serial number: %s", buf);
     for (i=0; i < 4; i++)
         ((unsigned short*)buf)[i]=htobe16(identify_info[i+23]);
     buf[8]=0;
     simplelist_addline(
              "Firmware: %s", buf);
-    snprintf(buf, sizeof buf, "%ld MB",
-             ((unsigned long)identify_info[61] << 16 |
-              (unsigned long)identify_info[60]) / 2048 );
+
+    uint64_t total_sectors = identify_info[60] | (identify_info[61] << 16);
+#ifdef HAVE_LBA48
+    if (identify_info[83] & 0x0400
+        && total_sectors == 0x0FFFFFFF)
+        total_sectors = identify_info[100] | (identify_info[101] << 16) | ((uint64_t)identify_info[102] << 32) | ((uint64_t)identify_info[103] << 48);
+#endif
+
+    uint32_t sector_size;
+
+    /* Logical sector size > 512B ? */
+    if ((identify_info[106] & 0xd000) == 0x5000)
+        sector_size = identify_info[117] | (identify_info[118] << 16);
+    else
+        sector_size = SECTOR_SIZE;
+
+    total_sectors *= sector_size;   /* Convert to bytes */
+    total_sectors /= (1024 * 1024); /* Convert to MB */
+
+    simplelist_addline("Size: %llu MB", total_sectors);
+    simplelist_addline("Logical sector size: %u B", sector_size);
+
+    if((identify_info[106] & 0xe000) == 0x6000)
+        sector_size *= BIT_N(identify_info[106] & 0x000f);
     simplelist_addline(
-             "Size: %s", buf);
-    unsigned long free;
+            "Physical sector size: %d B", sector_size);
+
+#ifndef HAVE_MULTIVOLUME
+    // XXX this needs to be fixed for multi-volume setups
+    sector_t free;
     volume_size( IF_MV(0,) NULL, &free );
     simplelist_addline(
-             "Free: %ld MB", free / 1024);
+             "Free: %llu MB", free / 1024);
+#endif
+
     simplelist_addline("SSD detected: %s", ata_disk_isssd() ? "yes" : "no");
     simplelist_addline(
              "Spinup time: %d ms", storage_spinup_time() * (1000/HZ));
@@ -1441,11 +1500,7 @@ static int disk_callback(int btn, struct gui_synclist *lists)
         simplelist_addline(
                  "No timing info");
     }
-    int sector_size = 512;
-    if((identify_info[106] & 0xe000) == 0x6000)
-        sector_size *= BIT_N(identify_info[106] & 0x000f);
-    simplelist_addline(
-            "Physical sector size: %d", sector_size);
+
 #ifdef HAVE_ATA_DMA
     if (identify_info[63] & (1<<0)) {
         simplelist_addline(
@@ -1740,8 +1795,8 @@ static int disk_callback(int btn, struct gui_synclist *lists)
     simplelist_addline("Model: %s", info.product);
     simplelist_addline("Firmware: %s", info.revision);
     simplelist_addline(
-             "Size: %ld MB", info.num_sectors*(info.sector_size/512)/2024);
-    unsigned long free;
+            "Size: %lld MB", (uint64_t)(info.num_sectors*(info.sector_size/512)/2048));
+    sector_t free;
     volume_size( IF_MV(0,) NULL, &free );
     simplelist_addline(
              "Free: %ld MB", free / 1024);
@@ -1760,13 +1815,13 @@ static bool dbg_identify_info(void)
         const unsigned short *identify_info = ata_get_identify();
 #ifdef ROCKBOX_LITTLE_ENDIAN
         /* this is a pointer to a driver buffer so we can't modify it */
-        for (int i = 0; i < SECTOR_SIZE/2; ++i)
+        for (int i = 0; i < ATA_IDENTIFY_WORDS; ++i)
         {
             unsigned short word = swap16(identify_info[i]);
             write(fd, &word, 2);
         }
 #else
-        write(fd, identify_info, SECTOR_SIZE);
+        write(fd, identify_info, ATA_IDENTIFY_WORDS*2);
 #endif
         close(fd);
     }
@@ -2574,6 +2629,121 @@ static bool dbg_boot_data(void)
 }
 #endif /* defined(HAVE_BOOTDATA) && !defined(SIMULATOR) */
 
+#if defined(HAVE_DEVICEDATA)// && !defined(SIMULATOR)
+static bool dbg_device_data(void)
+{
+    struct simplelist_info info;
+    info.scroll_all = true;
+    simplelist_info_init(&info, "Device data", 1, NULL);
+    simplelist_set_line_count(0);
+
+    simplelist_addline("Device data");
+
+#if defined(EROS_QN)
+    simplelist_addline("Lcd Version: %d", (int)device_data.lcd_version);
+#endif
+
+    simplelist_addline("Device data RAW:");
+    for (size_t i = 0; i < device_data.length; i += 4)
+    {
+        simplelist_addline("%02x: %02x %02x %02x %02x", i,
+                           device_data.payload[i + 0], device_data.payload[i + 1],
+                           device_data.payload[i + 2], device_data.payload[i + 3]);
+    }
+
+    return simplelist_show_list(&info);
+}
+#endif /* defined(HAVE_DEVICEDATA)*/
+
+
+#if defined(IPOD_6G) && !defined(SIMULATOR)
+#define SYSCFG_MAX_ENTRIES 9 // 9 on iPod Classic/6G
+
+static bool dbg_syscfg(void) {
+    struct simplelist_info info;
+    struct SysCfgHeader syscfg_hdr;
+    size_t syscfg_hdr_size = sizeof(struct SysCfgHeader);
+    size_t syscfg_entry_size = sizeof(struct SysCfgEntry);
+    struct SysCfgEntry syscfg_entries[SYSCFG_MAX_ENTRIES];
+
+    simplelist_info_init(&info, "SysCfg NOR contents", 1, NULL);
+    simplelist_set_line_count(0);
+
+    bootflash_init(SPI_PORT);
+    bootflash_read(SPI_PORT, 0, syscfg_hdr_size, &syscfg_hdr);
+
+    if (syscfg_hdr.magic != SYSCFG_MAGIC) {
+        simplelist_addline("SCfg magic not found");
+        bootflash_close(SPI_PORT);
+        return simplelist_show_list(&info);
+    }
+
+    simplelist_addline("Total size: %u bytes, %u entries", syscfg_hdr.size, syscfg_hdr.num_entries);
+
+    size_t calculated_syscfg_size = syscfg_hdr_size + syscfg_entry_size * syscfg_hdr.num_entries;
+
+    if (syscfg_hdr.size != calculated_syscfg_size) {
+        simplelist_addline("Wrong size: expected %u, got %u", calculated_syscfg_size, syscfg_hdr.size);
+        bootflash_close(SPI_PORT);
+        return simplelist_show_list(&info);
+    }
+
+    if (syscfg_hdr.num_entries > SYSCFG_MAX_ENTRIES) {
+        simplelist_addline("Too many entries, showing only first %u", SYSCFG_MAX_ENTRIES);
+    }
+
+    size_t syscfg_num_entries = MIN(syscfg_hdr.num_entries, SYSCFG_MAX_ENTRIES);
+    size_t syscfg_entries_size = syscfg_entry_size * syscfg_num_entries;
+
+    bootflash_read(SPI_PORT, syscfg_hdr_size, syscfg_entries_size, &syscfg_entries);
+    bootflash_close(SPI_PORT);
+
+    for (size_t i = 0; i < syscfg_num_entries; i++) {
+        struct SysCfgEntry* entry = &syscfg_entries[i];
+        char* tag = (char *)&entry->tag;
+        uint32_t* data32 = (uint32_t *)entry->data;
+
+        switch (entry->tag) {
+            case SYSCFG_TAG_SRNM:
+                simplelist_addline("Serial number (SrNm): %s", entry->data);
+                break;
+            case SYSCFG_TAG_FWID:
+                simplelist_addline("Firmware ID (FwId): %07X", data32[1] & 0x0FFFFFFF);
+                break;
+            case SYSCFG_TAG_HWID:
+                simplelist_addline("Hardware ID (HwId): %08X", data32[0]);
+                break;
+            case SYSCFG_TAG_HWVR:
+                simplelist_addline("Hardware version (HwVr): %06X", data32[1]);
+                break;
+            case SYSCFG_TAG_CODC:
+                simplelist_addline("Codec (Codc): %s", entry->data);
+                break;
+            case SYSCFG_TAG_SWVR:
+                simplelist_addline("Software version (SwVr): %s", entry->data);
+                break;
+            case SYSCFG_TAG_MLBN:
+                simplelist_addline("Logic board serial number (MLBN): %s", entry->data);
+                break;
+            case SYSCFG_TAG_MODN:
+                simplelist_addline("Model number (Mod#): %s", entry->data);
+                break;
+            case SYSCFG_TAG_REGN:
+                simplelist_addline("Sales region (Regn): %08X %08X", data32[0], data32[1]);
+                break;
+            default:
+                simplelist_addline("%c%c%c%c: %08X %08X %08X %08X",
+                    tag[3], tag[2], tag[1], tag[0],
+                    data32[0], data32[1], data32[2], data32[3]
+                );
+                break;
+        }
+    }
+
+    return simplelist_show_list(&info);
+}
+#endif
+
 /****** The menu *********/
 static const struct {
     unsigned char *desc; /* string or ID */
@@ -2683,6 +2853,14 @@ static const struct {
         {"Talk engine stats", dbg_talk },
 #if defined(HAVE_BOOTDATA) && !defined(SIMULATOR)
         {"Boot data", dbg_boot_data },
+#endif
+
+#if defined(HAVE_DEVICEDATA)// && !defined(SIMULATOR)
+        {"Device data", dbg_device_data },
+#endif
+
+#if defined(IPOD_6G) && !defined(SIMULATOR)
+        {"View SysCfg", dbg_syscfg },
 #endif
 };
 

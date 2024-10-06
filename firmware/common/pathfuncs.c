@@ -24,9 +24,13 @@
 #include "pathfuncs.h"
 #include "string-extra.h"
 #include <stdio.h>
+#include "file_internal.h"
+#include "debug.h"
 
 #ifdef HAVE_MULTIVOLUME
 #include "storage.h"
+
+static char vol_dec_strings[NUM_VOLUMES][ALIGN_UP(VOL_MAX_LEN+2, 4)] = {{0}};
 
 enum storage_name_dec_indexes
 {
@@ -105,6 +109,54 @@ static const unsigned char storage_dec_indexes[STORAGE_NUM_TYPES+1] =
     [STORAGE_HOSTFS_NUM]  = STORAGE_DEC_IDX_HOSTFS,
 #endif
 };
+
+/* builds a list of drive/volume specifiers <volstr#> */
+void init_volume_names(void)
+{
+    DEBUGF("%s: ", __func__);
+    FOR_EACH_VOLUME(-1, volume)
+    {
+        const char *voldec = "";
+        char *buffer = vol_dec_strings[volume];
+
+        int type = storage_driver_type(volume_drive(volume));
+        if (type < 0 || type > STORAGE_NUM_TYPES)
+            type = STORAGE_NUM_TYPES;
+        voldec = storage_dec_names[storage_dec_indexes[type]];
+        snprintf(buffer, VOL_MAX_LEN + 1, "%c%s%d%c",
+                VOL_START_TOK, voldec, volume, VOL_END_TOK);
+        DEBUGF("vol<%d> = %s ", volume, buffer);
+    }
+    DEBUGF("\n");
+}
+
+#include <stdio.h>
+
+int path_get_volume_id(const char *name)
+{
+    int v = -1;
+
+    if (!name || *name != VOL_START_TOK)
+        goto bail;
+
+    do {
+        switch (*name)
+        {
+        case '0' ... '9':       /* digit; parse volume number */
+            v = (v * 10 + *name - '0') % VOL_NUM_MAX;
+            break;
+        case '\0':
+        case PATH_SEPCH:        /* no closing bracket; no volume */
+            v = -1;
+            goto bail;
+        default:                /* something else; reset volume */
+            v = 0;
+        }
+    } while (*++name != VOL_END_TOK);  /* found end token? */
+
+bail:
+    return v;
+}
 
 /* Returns on which volume this is and sets *nameptr to the portion of the
  * path after the volume specifier, which could be the null if the path is
@@ -203,7 +255,8 @@ int path_strip_last_volume(const char *name, const char **nameptr, bool greedy)
 }
 
 /* Returns the volume specifier decorated with the storage type name.
- * Assumes the supplied buffer size is at least {VOL_MAX_LEN}+1.
+ * Assumes the supplied buffer size is at least {VOL_MAX_LEN}+1,
+ * vol_dec_strings has been initialized by init_volume_names().
  */
 int get_volume_name(int volume, char *buffer)
 {
@@ -218,17 +271,12 @@ int get_volume_name(int volume, char *buffer)
 
     volume %= VOL_NUM_MAX; /* as path parser would have it */
 
-    int type = storage_driver_type(volume_drive(volume));
-    if (type < 0 || type > STORAGE_NUM_TYPES)
-        type = STORAGE_NUM_TYPES;
-
-    const char *voldec = storage_dec_names[storage_dec_indexes[type]];
-    return snprintf(buffer, VOL_MAX_LEN + 1, "%c%s%d%c",
-                    VOL_START_TOK, voldec, volume, VOL_END_TOK);
+    return strlcpy(buffer, vol_dec_strings[volume], VOL_MAX_LEN + 1);
 }
 
 /* Returns volume name formatted with the root. Assumes buffer size is at
- * least {VOL_MAX_LEN}+2 */
+ * least {VOL_MAX_LEN}+2, vol_dec_strings has been initialized by init_volume_names().
+ */
 int make_volume_root(int volume, char *buffer)
 {
     char *t = buffer;

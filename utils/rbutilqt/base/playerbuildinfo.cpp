@@ -49,6 +49,7 @@ const static struct {
     { PlayerBuildInfo::PuzzFontsUrl,      "other/puzzfonts_url" },
     { PlayerBuildInfo::QuakeUrl,          "other/quake_url"     },
     { PlayerBuildInfo::Wolf3DUrl,         "other/wolf3d_url"    },
+    { PlayerBuildInfo::XRickUrl,          "other/xrick_url"     },
     { PlayerBuildInfo::XWorldUrl,         "other/xworld_url"    },
     { PlayerBuildInfo::MidiPatchsetUrl,   "other/patcheset_url" },
 };
@@ -66,6 +67,7 @@ const static struct {
     { PlayerBuildInfo::Encoder,            ":target:/encoder"          },
     { PlayerBuildInfo::Brand,              ":target:/brand"            },
     { PlayerBuildInfo::PlayerPicture,      ":target:/playerpic"        },
+    { PlayerBuildInfo::ThemeName,          ":target:/themename"        },
     { PlayerBuildInfo::TargetNamesAll,     "_targets/all"              },
     { PlayerBuildInfo::TargetNamesEnabled, "_targets/enabled"          },
     { PlayerBuildInfo::LanguageInfo,       "languages/:target:"        },
@@ -331,7 +333,7 @@ QVariant PlayerBuildInfo::value(SystemUrl item)
 QString PlayerBuildInfo::statusAsString(QString platform)
 {
     QString result;
-    switch(value(BuildStatus, platform).toInt())
+    switch(value(BuildStatus, platform.split('.').at(0)).toInt())
     {
     case STATUS_RETIRED:
         result = tr("Stable (Retired)");

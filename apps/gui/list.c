@@ -51,6 +51,7 @@ void list_draw(struct screen *display, struct gui_synclist *list);
 
 static long last_dirty_tick;
 static struct viewport parent[NB_SCREENS];
+static struct gui_synclist *current_lists;
 
 static bool list_is_dirty(struct gui_synclist *list)
 {
@@ -160,7 +161,6 @@ void gui_synclist_init(struct gui_synclist * gui_list,
     gui_list->nb_items = 0;
     gui_list->selected_item = 0;
     gui_synclist_init_display_settings(gui_list);
-
 #ifdef HAVE_TOUCHSCREEN
     gui_list->y_pos = 0;
 #endif
@@ -586,16 +586,19 @@ bool gui_synclist_keyclick_callback(int action, void* data)
  * loop.
  *
  * The GUI_EVENT_NEED_UI_UPDATE event is registered for in list_do_action_timeout()
- * and unregistered in gui_synclict_do_button(). This is done because
- * if something is using the list UI they *must* be calling those
+ * as a oneshot and current_lists updated. later current_lists is set to NULL
+ * in gui_synclist_do_button() effectively disabling the callback. 
+*  This is done because if something is using the list UI they *must* be calling those
  * two functions in the correct order or the list wont work.
  */
-static struct gui_synclist *current_lists;
-static bool ui_update_event_registered = false;
-static void _lists_uiviewport_update_callback(unsigned short id, void *data)
+
+static void _lists_uiviewport_update_callback(unsigned short id,
+                                              void *data, void *userdata)
 {
     (void)id;
     (void)data;
+    (void)userdata;
+
     if (current_lists)
         gui_synclist_draw(current_lists);
 }
@@ -697,6 +700,7 @@ bool gui_synclist_do_button(struct gui_synclist * lists, int *actionptr)
         case ACTION_TREE_PGRIGHT:
             gui_synclist_scroll_right(lists);
             gui_synclist_draw(lists);
+            yield();
             return true;
         case ACTION_TREE_ROOT_INIT:
          /* After this button press ACTION_TREE_PGLEFT is allowed
@@ -724,6 +728,7 @@ bool gui_synclist_do_button(struct gui_synclist * lists, int *actionptr)
             gui_synclist_draw(lists);
             pgleft_allow_cancel = false; /* stop ACTION_TREE_PAGE_LEFT
                                             skipping to root */
+            yield();
             return true;
 /* for pgup / pgdown, we are obliged to have a different behaviour depending
  * on the screen for which the user pressed the key since for example, remote
@@ -769,13 +774,8 @@ int list_do_action_timeout(struct gui_synclist *lists, int timeout)
 /* Returns the lowest of timeout or the delay until a postponed
    scheduled announcement is due (if any). */
 {
-    if (lists != current_lists)
-    {
-        if (!ui_update_event_registered)
-            ui_update_event_registered =
-                    add_event(GUI_EVENT_NEED_UI_UPDATE, _lists_uiviewport_update_callback);
-        current_lists = lists;
-    }
+    add_event_ex(GUI_EVENT_NEED_UI_UPDATE, true, _lists_uiviewport_update_callback, NULL);
+    current_lists = lists;
     if(lists->scheduled_talk_tick)
     {
         long delay = lists->scheduled_talk_tick -current_tick +1;
@@ -944,7 +944,9 @@ bool simplelist_show_list(struct simplelist_info *info)
             old_line_count = simplelist_line_count;
         }
         else if(default_event_handler(action) == SYS_USB_CONNECTED)
+        {
             return true;
+        }
     }
     talk_shutup();
 

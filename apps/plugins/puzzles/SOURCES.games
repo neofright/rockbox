@@ -1,5 +1,3 @@
-/* every game works! :) */
-
 src/blackbox.c
 src/bridges.c
 src/cube.c
@@ -16,6 +14,7 @@ src/lightup.c
 src/magnets.c
 src/map.c
 src/mines.c
+src/mosaic.c
 src/net.c
 src/netslide.c
 src/palisade.c
@@ -36,12 +35,8 @@ src/undead.c
 src/unequal.c
 src/unruly.c
 src/untangle.c
-
-/* disabled for now (fix puzzles.make and CATEGORIES to accomodate these) */
-/*src/unfinished/group.c*/
-/*src/unfinished/separate.c*/
-/*src/unfinished/slide.c*/
-/*src/unfinished/sokoban.c*/
+src/unfinished/slide.c
+src/unfinished/sokoban.c
 
 /* no c200v2 */
 #if PLUGIN_BUFFER_SIZE > 0x14000

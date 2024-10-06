@@ -104,6 +104,30 @@ void audiohw_postinit(void)
         * for 24-bit data... */
         // es9018k2m_write_reg(ES9018K2M_REG1_INPUT_CONFIG, 0b01001100); // 24-bit data
 
+       /* Datasheet: Sets the number os FSR edges that must occur before    *
+        * the DPLL and ASRC can lock on to the the incoming Signal.         *
+        * When Samplerates >= 96khz could be used, STOP_DIV should be set   *
+        * to 0 (= 16384 FSR Edges).                                         *
+        *   Reg #10 [3:0] (0x05 default, 2730 FSR Edges)                    */
+        es9018k2m_write_reg(ES9018K2M_REG10_MASTER_MODE_CTRL, 0x00);
+
+       /* Datasheet: The ES90x8Q2M/K2M contains a Jitter Eliminator block,   *
+        * which employs the use of a digital phase locked loop (DPLL) to     *
+        * lock to the incoming audio clock rate. When in I2S or SPDIF mode,  *
+        * the DPLL will lock to the frame clock (1 x fs). However, when in   *
+        * DSD mode, the DPLL has no frame clock information, and must in-    *
+        * stead lock to the bit clock rate (BCK). For this reason, there are *
+        * two bandwidth settings for the DPLL.                               *
+           Reg #12 [7:4] (0x05 default) bandwidth for I2S / SPDIF mode.
+           Reg #12 [3:0] (0x0A default) bandwidth for DSD mode.
+        * The DPLL bandwidth sets how quickly the DPLL can adjust its intern *
+        * representation of the audio clock. The higher the jitter or        *
+        * frequency drift on the audio clock, the higher the bandwidth must  *
+        * be so that the DPLL can react.                                     *
+        * ! If the bandwidth is “too low”, the DPLL will loose lock and you  *
+        * ! will hear random dropouts. (Fixed my SurfansF20 v3.2 dropouts)   */
+        es9018k2m_write_reg(ES9018K2M_REG12_DPLL_SETTINGS, 0xda);
+
     } else { /* Default to SWVOL for PCM5102A DAC */
         logf("Default to SWVOL: ret=%d", ret);
     }
@@ -139,17 +163,19 @@ void audiohw_set_volume(int vol_l, int vol_r)
     r = vol_r;
 
 #if (defined(HAVE_HEADPHONE_DETECTION) && defined(HAVE_LINEOUT_DETECTION))
-    /* make sure headphones aren't present - don't want to
-     * blow out our eardrums cranking it to full */
-    if (lineout_inserted() && !headphones_inserted())
+    /* Due to the hardware's detection method, make the Line-Out
+     * the default. The LO can only be detected if it is active
+     * (assuming a high-impedance device is attached). HP takes priority
+     * if both are present. */
+    if (headphones_inserted())
+    {
+        eros_qn_switch_output(0);
+    }
+    else
     {
         eros_qn_switch_output(1);
 
         l = r = eros_qn_get_volume_limit();
-    }
-    else
-    {
-        eros_qn_switch_output(0);
     }
 #endif
 

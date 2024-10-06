@@ -140,8 +140,8 @@ bool ata_disk_is_active(void);
 int ata_soft_reset(void);
 int ata_init(void) STORAGE_INIT_ATTR;
 void ata_close(void);
-int ata_read_sectors(IF_MD(int drive,) unsigned long start, int count, void* buf);
-int ata_write_sectors(IF_MD(int drive,) unsigned long start, int count, const void* buf);
+int ata_read_sectors(IF_MD(int drive,) sector_t start, int count, void* buf);
+int ata_write_sectors(IF_MD(int drive,) sector_t start, int count, const void* buf);
 void ata_spin(void);
 #if (CONFIG_LED == LED_REAL)
 void ata_set_led_enabled(bool enabled);
@@ -191,22 +191,22 @@ static inline int ata_disk_isssd(void)
         However microdrives pose a problem as they support CFA but are not
         SSD.
 
+       Offset 163 shows CF Advanced timing modes; microdrives all seems to
+        report 0, but all others (including iFlash) report higher!  This
+        is often present even when the "CFA supported" bit is 0.
+
        Offset 160 b15 indicates support for CF+ power level 1, if not set
         then device is standard flash CF.  However this is not foolproof
-        as newer CF cards may support it for extra performance.
+        as newer CF cards (and those CF->SD adapters) may report this.
 
-       Offset 163 shows CF Advanced timing modes; microdrive seems to
-        report 0, but all others (including iFlash) report higher!
-
-       So if device support CFA _AND_ reports higher speeds modes, it is SSD.
 
      */
     return ( (identify_info[217] == 0x0001 || identify_info[217] == 0x0100) /* "Solid state" rotational rate */
              || ((identify_info[168] & 0x0f) >= 0x06)                       /* Explicit SSD form factors */
              || (identify_info[169] & (1<<0))                               /* TRIM supported */
+             || (identify_info[163] > 0)                                    /* CF Advanced timing modes */
              || ((identify_info[83] & (1<<2)) &&                            /* CFA compliant */
-                 (((identify_info[160] & (1<<15)) == 0) ||                     /* CF level 0 */
-                  (identify_info[163] > 0)))                                   /* Advanced timing modes */
+                 ((identify_info[160] & (1<<15)) == 0))                       /* CF power level 0 */
            );
 }
 
@@ -232,5 +232,7 @@ int ata_read_smart(struct ata_smart_values*);
 #ifdef BOOTLOADER
 #define STORAGE_CLOSE
 #endif
+
+#define ATA_IDENTIFY_WORDS 256
 
 #endif /* __ATA_H__ */

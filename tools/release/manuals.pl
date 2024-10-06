@@ -28,7 +28,7 @@ sub runone {
 
     chdir "..";
 
-    my $o="buildm-$dir/rockbox-$dir-$version.pdf";
+    my $o="buildm-$dir/rockbox-manual.pdf";
     if (-f $o) {
         my $newo="$outdir/rockbox-$dir-$version.pdf";
         system("mv $o $newo");
@@ -74,6 +74,6 @@ sub buildit {
 
 `mkdir -p $outdir`;
 
-for my $b (&usablebuilds) {
+for my $b (&manualbuilds) {
     runone($b);
 }

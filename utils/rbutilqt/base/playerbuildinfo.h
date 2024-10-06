@@ -53,6 +53,7 @@ public:
         QuakeUrl,
         Wolf3DUrl,
         XWorldUrl,
+        XRickUrl,
         MidiPatchsetUrl,
     };
     enum DeviceInfo {
@@ -66,6 +67,7 @@ public:
         Encoder,
         Brand,
         PlayerPicture,
+        ThemeName,
 
         TargetNamesAll,
         TargetNamesEnabled,

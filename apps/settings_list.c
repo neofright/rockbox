@@ -998,7 +998,7 @@ const struct settings_list settings[] = {
                   play_frequency, LANG_FREQUENCY, 0, "playback frequency", "auto",
                   UNIT_KHZ, formatter_freq_unit_0_is_auto,
                   getlang_freq_unit_0_is_auto,
-                  playback_frequency_callback, 
+                  playback_frequency_callback,
 #if HAVE_PLAY_FREQ >= 192
                   7,0,SAMPR_44,SAMPR_48,SAMPR_88,SAMPR_96,SAMPR_176,SAMPR_192),
 #elif HAVE_PLAY_FREQ >= 96
@@ -1120,7 +1120,11 @@ const struct settings_list settings[] = {
     SYSTEM_SETTING(NVRAM(4), topruntime, 0),
     INT_SETTING(F_BANFROMQS, max_files_in_playlist,
                 LANG_MAX_FILES_IN_PLAYLIST,
-#if MEMORYSIZE > 1
+#if CONFIG_CPU == PP5002 || CONFIG_CPU == PP5020 || CONFIG_CPU == PP5022
+                  /** Slow CPU benefits greatly from building smaller playlists 
+                  On the iPod Mini 2nd gen, creating a playlist of 2000 entries takes around 10 seconds */
+                  2000,
+#elif MEMORYSIZE > 1
                   99999,
 #else
                   400,
@@ -1319,6 +1323,8 @@ const struct settings_list settings[] = {
 #endif
     OFFON_SETTING(0, offset_out_of_view, LANG_SCREEN_SCROLL_VIEW,
                   false, "Screen Scrolls Out Of View", NULL),
+    OFFON_SETTING(0, disable_mainmenu_scrolling, LANG_DISABLE_MAINMENU_SCROLLING,
+                  false, "Disable main menu scrolling", NULL),
     INT_SETTING(F_PADTITLE, scroll_step, LANG_SCROLL_STEP, 6, "scroll step",
                 UNIT_PIXEL, 1, LCD_WIDTH, 1, NULL, NULL, lcd_scroll_step),
     INT_SETTING(F_PADTITLE, screen_scroll_step, LANG_SCREEN_SCROLL_STEP, 16,
@@ -1415,9 +1421,11 @@ const struct settings_list settings[] = {
     OFFON_SETTING(0,playlist_viewer_indices,LANG_SHOW_INDICES,true,
                   "playlist viewer indices",NULL),
     CHOICE_SETTING(0, playlist_viewer_track_display, LANG_TRACK_DISPLAY, 0,
-                   "playlist viewer track display","track name,full path",
-                   NULL, 2, ID2P(LANG_DISPLAY_TRACK_NAME_ONLY),
-                   ID2P(LANG_DISPLAY_FULL_PATH)),
+                   "playlist viewer track display",
+                   "track name,full path,title and album from tags,title from tags",
+                   NULL, 4, ID2P(LANG_DISPLAY_TRACK_NAME_ONLY),
+                   ID2P(LANG_DISPLAY_FULL_PATH),ID2P(LANG_DISPLAY_TITLEALBUM_FROMTAGS),
+                   ID2P(LANG_DISPLAY_TITLE_FROMTAGS)),
     CHOICE_SETTING(0, recursive_dir_insert, LANG_RECURSE_DIRECTORY , RECURSE_ON,
                    "recursive directory insert", off_on_ask, NULL , 3 ,
                    ID2P(LANG_OFF), ID2P(LANG_ON), ID2P(LANG_ASK)),
@@ -1852,7 +1860,7 @@ const struct settings_list settings[] = {
                   true, "warn when erasing dynamic playlist",NULL),
     OFFON_SETTING(0, keep_current_track_on_replace_playlist, LANG_KEEP_CURRENT_TRACK_ON_REPLACE,
                   true, "keep current track when replacing playlist",NULL),
-    OFFON_SETTING(0, show_shuffled_adding_options, LANG_SHOW_SHUFFLED_ADDING_OPTIONS, false,
+    OFFON_SETTING(0, show_shuffled_adding_options, LANG_SHOW_SHUFFLED_ADDING_OPTIONS, true,
                       "show shuffled adding options", NULL),
     CHOICE_SETTING(0, show_queue_options, LANG_SHOW_QUEUE_OPTIONS, 0,
                       "show queue options", "off,on,in submenu",
@@ -1883,7 +1891,7 @@ const struct settings_list settings[] = {
 #ifdef HAVE_BACKLIGHT
     CHOICE_SETTING(0, backlight_on_button_hold,
                    LANG_BACKLIGHT_ON_BUTTON_HOLD,
-#ifdef HAS_BUTTON_HOLD                   
+#ifdef HAS_BUTTON_HOLD
                    1,
 #else
                    0,
@@ -2216,6 +2224,8 @@ const struct settings_list settings[] = {
 #ifdef HAVE_REMOTE_LCD
     VIEWPORT_SETTING(remote_ui_vp_config, "remote ui viewport"),
 #endif
+
+    TEXT_SETTING(F_THEMESETTING, player_name, "player name", "", NULL, NULL),
 
 #ifdef HAVE_MORSE_INPUT
     OFFON_SETTING(0, morse_input, LANG_MORSE_INPUT, false, "morse input", NULL),

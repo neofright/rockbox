@@ -10,12 +10,13 @@ $releasenotes="/wiki/ReleaseNotes315";
 # 'modelname' => {
 #    name => 'Full Name',
 #    status => 1,                        # 0=retired, 1=unusable, 2=unstable, 3=stable
+#    sim = 1,                            # optional (defaults 1 for status 2/3 and 0 for status 1)
 #    ram => 2,                           # optional (used?)
 #    manual => 'modelname2',             # optional (uses modelname2's manual)
 #    icon => 'modelname3',               # optional (uses modelname3's icon)
 #    voice => 'modelname4'               # optional (uses modelname4's voice)
 #    release => '3.14',                  # optional (final release version, if different from above)
-#    manualok => 1,                      # optional (builds manual even if target is not stable)
+#    manualok => 1,                      # optional (defaults 1 for status 3 and 0 for rest)
 # }
 
 %builds = (
@@ -70,10 +71,12 @@ $releasenotes="/wiki/ReleaseNotes315";
     },
     'gogearhdd1630' => {
         name => 'Philips GoGear HDD1630',
+        manualok => 0,
         status => 3,
     },
     'gogearhdd6330' => {
         name => 'Philips GoGear HDD6330',
+        manualok => 0,
         status => 3,
     },
     'gogearsa9200' => {
@@ -82,26 +85,32 @@ $releasenotes="/wiki/ReleaseNotes315";
     },
     'hifietma9' => {
         name => 'HiFi E.T MA9',
+	sim => 0,
         status => 2,
     },
     'hifietma9c' => {
         name => 'HiFi E.T MA9C',
+	sim => 0,
         status => 2,
     },
     'hifietma8' => {
         name => 'HiFi E.T MA8',
         status => 2,
+	sim => 0,
     },
     'hifietma8c' => {
         name => 'HiFi E.T MA8C',
         status => 2,
+	sim => 0,
     },
     'hifimanhm60x' => {
         name => 'HiFiMAN HM-60x',
+	sim => 0,
         status => 2,
     },
     'hifimanhm801' => {
         name => 'HiFiMAN HM-801',
+	sim => 0,
         status => 2,
     },
     'iaudiom3' => {
@@ -118,10 +127,12 @@ $releasenotes="/wiki/ReleaseNotes315";
     },
     'ibassodx50' => {
         name => 'iBasso DX50',
+	sim => 0,
         status => 2,
     },
     'ibassodx90' => {
         name => 'iBasso DX90',
+	sim => 0,
         status => 2,
     },
     'ipod1g2g' => {
@@ -219,10 +230,12 @@ $releasenotes="/wiki/ReleaseNotes315";
     'ondavx747' => {
         name => 'Onda VX747',
         status => 1,
+	sim => 1,
     },
     'ondavx747p' => {
         name => 'Onda VX747+',
         status => 1,
+	sim => 1,
     },
     'ondavx767' => {
         name => 'Onda VX767',
@@ -231,6 +244,7 @@ $releasenotes="/wiki/ReleaseNotes315";
     'ondavx777' => {
         name => 'Onda VX777',
         status => 1,
+	sim => 1,
     },
     'rk27generic' => {
         name => 'Rockchip rk27xx',
@@ -254,6 +268,7 @@ $releasenotes="/wiki/ReleaseNotes315";
     },
     'samsungypr1' => {
         name => 'Samsung YP-R1',
+	sim => 0,
         status => 2,
     },
     'samsungyps3' => {
@@ -316,6 +331,7 @@ $releasenotes="/wiki/ReleaseNotes315";
     'sansam200v4' => {
         name => 'SanDisk Sansa m200 v4',
         status => 1,
+	sim => 1,
     },
     'sansaview' => {
         name => 'SanDisk Sansa View',
@@ -328,14 +344,17 @@ $releasenotes="/wiki/ReleaseNotes315";
     'zenvision' => {
         name => 'Creative Zen Vision',
         status => 1,
+	sim => 1,
     },
     'zenvisionm30gb' => {
         name => 'Creative Zen Vision:M 30GB',
         status => 1,
+	sim => 1,
     },
     'zenvisionm60gb' => {
         name => 'Creative Zen Vision:M 60GB',
         status => 1,
+	sim => 1,
     },
     'mpiohd200' => {
         name => 'MPIO HD200',
@@ -352,41 +371,51 @@ $releasenotes="/wiki/ReleaseNotes315";
     'creativezenxfi3' => {
         name => 'Creative Zen X-Fi3',
         status => 3,
+        manualok => 0,
     },
     'sonynwze350' => {
         name => 'Sony NWZ-E350',
+	sim => 0,
         status => 2,
     },
     'sonynwze360' => {
         name => 'Sony NWZ-E360',
         status => 3,
+        manualok => 0,
     },
     'sonynwze370' => {
         name => 'Sony NWZ-E370/E380',
         status => 3,
+        manualok => 0,
     },
     'sonynwze450' => {
         name => 'Sony NWZ-E450',
+	sim => 0,
         status => 2,
     },
     'sonynwze460' => {
         name => 'Sony NWZ-E460',
+	sim => 0,
         status => 2,
     },
     'sonynwze470' => {
         name => 'Sony NWZ-E470',
+	sim => 0,
         status => 2,
     },
     'sonynwze580' => {
         name => 'Sony NWZ-E580',
+	sim => 0,
         status => 2,
     },
     'sonynwza10' => {
         name => 'Sony NWZ-A10',
+	sim => 0,
         status => 2,
     },
     'sonynwa20' => {
         name => 'Sony NW-A20',
+	sim => 0,
         status => 2,
     },
     'sonynwza860' => {
@@ -396,14 +425,17 @@ $releasenotes="/wiki/ReleaseNotes315";
     'sonynwzs750' => {
         name => 'Sony NWZ-S750',
         status => 2,
+	sim => 0,
     },
     'creativezenxfi' => {
         name => 'Creative Zen X-Fi',
-        status => 3
+        status => 3,
+        manualok => 0,
     },
     'creativezenxfistyle' => {
         name => 'Creative Zen X-Fi Style',
-        status => 3
+        status => 3,
+        manualok => 0,
     },
     'creativezen' => {
         name => 'Creative Zen',
@@ -411,24 +443,30 @@ $releasenotes="/wiki/ReleaseNotes315";
     },
     'creativezenmozaic' => {
         name => 'Creative Zen Mozaic',
-        status => 3
+        status => 3,
+        manualok => 0,
     },
     'agptekrocker' => {
         name => 'Agptek Rocker',
-        status => 2,
-        manualok => 1, # Remove once status moves to 3
+        status => 3,
+        release => '4.0',  # Remove once 4.0 lands
     },
     'xduoox3' => {
         name => 'xDuoo X3',
         status => 3,
+        release => '4.0',  # Remove once 4.0 lands
     },
     'xduoox3ii' => {
         name => 'xDuoo X3ii',
-        status => 2,
+        manualok => 0,     # Remove when manual is written
+        status => 3,
+        release => '4.0',  # Remove once 4.0 lands
     },
     'xduoox20' => {
         name => 'xDuoo X20',
-        status => 2,
+        manualok => 0,     # Remove when manual is written
+        status => 3,
+        release => '4.0',  # Remove once 4.0 lands
     },
     'fiiom3klinux' => {
         name => 'FiiO M3K (Linux)',
@@ -436,16 +474,17 @@ $releasenotes="/wiki/ReleaseNotes315";
     },
     'fiiom3k' => {
         name => 'FiiO M3K',
-        status => 2,
-        manualok => 1, # Remove once status moves to 3
+        status => 3,
+        release => '4.0',  # Remove once 4.0 lands
     },
     'aigoerosq' => {
         name => 'AIGO EROS Q / K (Hosted)',
-        status => 2,
+        status => 2,  # Do we promote this to stable?
     },
     'erosqnative' => {
         name => 'AIGO EROS Q / K (Native)',
-        status => 2,
+        status => 3,
+        release => '4.0',  # Remove once 4.0 lands
     },
     'ihifi770' => {
         name => 'Xuelin iHIFI 770',
@@ -461,8 +500,8 @@ $releasenotes="/wiki/ReleaseNotes315";
     },
     'shanlingq1' => {
         name => 'Shanling Q1',
-        status => 2,
-        manualok => 1, # Remove once status moves to 3
+        status => 3,
+        release => '4.0',  # Remove once 4.0 lands
     },
 );
 
@@ -486,7 +525,18 @@ sub usablebuilds {
     my @list;
 
     for my $b (sort byname keys %builds) {
-        push @list, $b if ($builds{$b}{status} >= 2 || defined($builds{$b}{manualok}));
+        push @list, $b if ($builds{$b}{status} >= 2);
+    }
+
+    return @list;
+}
+
+sub manualbuilds {
+    my @list;
+
+    for my $b (sort byname keys %builds) {
+        push @list, $b if (($builds{$b}{status} > 2 && !defined($builds{$b}{manualok})) ||
+                          (defined($builds{$b}{manualok}) && ($builds{$b}{manualok} > 0)));
     }
 
     return @list;
@@ -507,6 +557,17 @@ sub allbuilds {
 
     for my $b (sort byname keys %builds) {
         push @list, $b;
+    }
+
+    return @list;
+}
+
+sub simbuilds {
+    my @list;
+
+    for my $b (&allbuilds) {
+        push @list, $b if (defined($builds{$b}{sim}) and $builds{$b}{sim});
+        push @list, $b if (!defined($builds{$b}{sim}) and $builds{$b}{status} > 1);
     }
 
     return @list;
@@ -536,34 +597,61 @@ sub allbuilds {
 	'lang' => 'english',
 	'name' => 'UK English',
 	'short' => 'en-gb',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'festival' => '--language english',
 	    'espeak' => '-ven-gb -k 5',
 	    'gtts' => '-l en -t co.uk',
+	    'piper' => 'en_GB-semaine-medium.onnx',
 	},
         'enabled' => 1,
     },
     # Everything else in alphabetical order
+    'bulgarian' => {
+	'lang' => 'bulgarian',
+	'name' => 'Български (Bulgarian)',
+        'short' => 'bg',
+        'defengine' => 'espeak',  # XXX Switch to gtts when buildserver is updated
+	'engines' => {
+	    'espeak' => '-vbg',
+	    'gtts' => '-l bg',
+            # No piper voice yet.
+	},
+        'enabled' => 1,
+    },
+    'chinese-simp' => {  # Mandarin?
+	'lang' => 'chinese-simp',
+	'name' => '简体中文 (Chinese Simplified)',
+        'short' => 'zh_cn',
+        'defengine' => 'piper',
+	'engines' => {
+	    'espeak' => '-vzh',
+	    'gtts' => '-l zh',
+	    'piper' => 'zh_CN-huayan-medium.onnx',
+	},
+        'enabled' => 1,
+    },
     'czech' => {
 	'lang' => 'czech',
 	'name' => 'Čeština (Czech)',
         'short' => 'cs',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'espeak' => '-vcs',
 	    'gtts' => '-l cs',
+	    'piper' => 'cs_CZ-jirka-medium.onnx',
 	},
-        'enabled' => 0,
+        'enabled' => 1,
     },
     'dansk' => {
 	'lang' => 'dansk',
 	'name' => 'Dansk (Danish)',
         'short' => 'da',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'espeak' => '-vda',
 	    'gtts' => '-l da',
+            'piper' => 'da_DK-talesyntese-medium.onnx',
 	},
         'enabled' => 0,
     },
@@ -571,10 +659,11 @@ sub allbuilds {
 	'lang' => 'deutsch',
 	'name' => 'Deutsch (German)',
         'short' => 'de',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'espeak' => '-vde',
 	    'gtts' => '-l de',
+            'piper' => 'de_DE-thorsten-high.onnx',
 	},
         'enabled' => 1,
     },
@@ -586,6 +675,7 @@ sub allbuilds {
 	'engines' => {
 	    'espeak' => '-vet',
 	    'gtts' => '-l et',
+            # No piper voice yet.
 	},
         'enabled' => 0,
     },
@@ -593,11 +683,12 @@ sub allbuilds {
 	'lang' => 'english-us',
 	'name' => 'American English',
         'short' => 'en-us',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'festival' => '--language english',
 	    'espeak' => '-ven-us -k 5',
 	    'gtts' => '-l en -t us',
+            'piper' => 'en_US-lessac-high.onnx',
 	},
         'enabled' => 1,
     },
@@ -605,11 +696,12 @@ sub allbuilds {
 	'lang' => 'espanol',
 	'name' => 'Spanish (Peninsular)',
         'short' => 'es-es',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'festival' => '--language spanish',
 	    'espeak' => '-ves -k 5',
 	    'gtts' => '-l es',
+            'piper' => 'es_ES-sharvard-medium.onnx',
 	},
         'enabled' => 0,
     },
@@ -619,9 +711,9 @@ sub allbuilds {
         'short' => 'es-mx',
         'defengine' => 'espeak',
 	'engines' => {
-	    'festival' => '--language spanish',
 	    'espeak' => '-ves -k 6',
-	    'gtts' => '-l es -t mx',
+            'gtts' => '-l es -t mx',
+            # No piper voice yet.
 	},
         'enabled' => 0,
     },
@@ -629,10 +721,11 @@ sub allbuilds {
 	'lang' => 'francais',
 	'name' => 'Français (French)',
         'short' => 'fr',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'espeak' => '-vfr-fr',
 	    'gtts' => '-l fr',
+            'piper' => 'fr_FR-siwis-medium.onnx',
 	},
         'enabled' => 1,
     },
@@ -640,10 +733,11 @@ sub allbuilds {
 	'lang' => 'greek',
 	'name' => 'Ελληνικά (Greek)',
         'short' => 'el',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'espeak' => '-vel',
 	    'gtts' => '-l el',
+            'piper' => 'el_GR-rapunzelina-low.onnx',
 	},
         'enabled' => 1,
     },
@@ -651,10 +745,22 @@ sub allbuilds {
 	'lang' => 'italiano',
 	'name' => 'Italiano (Italian)',
         'short' => 'it',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'espeak' => '-vit',
 	    'gtts' => '-l it',
+            'piper' => 'it_IT-paola-medium.onnx',
+	},
+        'enabled' => 1,
+    },
+    'korean' => {  #
+	'lang' => 'korean',
+	'name' => '한국어 (Korean)',
+        'short' => 'ko',
+        'defengine' => 'espeak',
+	'engines' => {
+	    'espeak' => '-vko',
+	    'gtts' => '-l ko',
 	},
         'enabled' => 1,
     },
@@ -662,10 +768,11 @@ sub allbuilds {
 	'lang' => 'nederlands',
 	'name' => 'Nederlands (Dutch)',
         'short' => 'nl',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'espeak' => '-vnl',
 	    'gtts' => '-l nl',
+            'piper' => 'nl_NL-mls-medium.onnx',
 	},
 	'enabled' => 1,
     },
@@ -673,10 +780,11 @@ sub allbuilds {
 	'lang' => 'norsk',
 	'name' => 'Norsk (Norwegian)',
         'short' => 'no',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'espeak' => '-vno',
 	    'gtts' => '-l no',
+            'piper' => 'no_NO-talesyntese-medium.onnx',
 	},
         'enabled' => 1,
     },
@@ -684,10 +792,11 @@ sub allbuilds {
 	'lang' => 'polski',
 	'name' => 'Polski (Polish)',
         'short' => 'pl',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'espeak' => '-vpl',
 	    'gtts' => '-l pl',
+            'piper' => 'pl_PL-gosia-medium.onnx',
 	},
         'enabled' => 1,
     },
@@ -695,10 +804,11 @@ sub allbuilds {
 	'lang' => 'russian',
 	'name' => 'Русский (Russian)',
         'short' => 'ru',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'espeak' => '-vru',
 	    'gtts' => '-l ru',
+            'piper' => 'ru_RU-irina-medium.onnx',
 	},
         'enabled' => 1,
     },
@@ -710,6 +820,7 @@ sub allbuilds {
 	'engines' => {
 	    'espeak' => '-vsk',
 	    'gtts' => '-l sk',
+            'piper' => 'sk_SK-lili-medium.onnx',
 	},
         'enabled' => 1,
     },
@@ -717,34 +828,48 @@ sub allbuilds {
 	'lang' => 'srpski',
 	'name' => 'српски (Serbian)',
         'short' => 'sr',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'espeak' => '-vsr',
 	    'gtts' => '-l sr',
+            'piper' => 'sr_RS-serbski_institut-medium.onnx',
 	},
         'enabled' => 1,
+    },
+    'svenska' => {
+	'lang' => 'svenska',
+	'name' => 'Svenska (Swedish)',
+        'short' => 'sr',
+        'defengine' => 'piper',
+	'engines' => {
+	    'espeak' => '-vsv',
+	    'gtts' => '-l sv',
+            'piper' => 'sv_SE-nst-medium.onnx',
+	},
+        'enabled' => 0,
     },
     'turkce' => {
 	'lang' => 'turkce',
 	'name' => 'Türkçe (Turkish)',
         'short' => 'tr',
-        'defengine' => 'espeak',
+        'defengine' => 'piper',
 	'engines' => {
 	    'espeak' => '-vtr',
 	    'gtts' => '-l tr',
+            'piper' => 'tr_TR-fettah-medium.onnx',
 	},
         'enabled' => 1,
     },
 );
 
-sub bylang {
-    return uc $voices{$a}{lang} cmp uc $voices{$b}{lang};
+sub byshortname {
+    return uc $voices{$a}{short} cmp uc $voices{$b}{short};
 }
 
 sub allvoices {
     my @list;
 
-    for my $b (sort bylang keys %voices) {
+    for my $b (sort byshortname keys %voices) {
         push @list, $b if (defined($voices{$b}->{enabled}) && $voices{$b}->{enabled});
     }
 
@@ -755,7 +880,7 @@ sub voicesforlang($) {
     my $l = shift @_;
     my @list;
 
-    for my $b (sort bylang keys %voices) {
+    for my $b (sort byshortname keys %voices) {
         push @list, $b if ($voices{$b}{lang} eq $b && defined($voices{$b}->{enabled}) && $voices{$b}->{enabled});
     }
 

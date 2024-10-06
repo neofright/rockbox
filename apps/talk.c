@@ -5,7 +5,6 @@
  *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
  *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
  *                     \/            \/     \/    \/            \/
- * $Id$
  *
  * Copyright (C) 2004 Jörg Hohensohn
  *
@@ -45,6 +44,7 @@
 #include "debug.h"
 #include "panic.h"
 #include "misc.h" /* time_split_units() */
+#include "mv.h"
 
 /***************** Constants *****************/
 
@@ -84,7 +84,7 @@ struct voicefile_header /* file format of our voice file */
 
 /***************** Globals *****************/
 
-#if MEMORYSIZE <= 2
+#if MEMORYSIZE <= 8
 /* On low memory swcodec targets the entire voice file wouldn't fit in memory
  * together with codecs, so we load clips each time they are accessed. */
 #define TALK_PROGRESSIVE_LOAD
@@ -777,7 +777,7 @@ static int _talk_spell(const char* spell, size_t len, bool enqueue)
             talk_id(VOICE_DOT, true);
         else if (c == ' ')
             talk_id(VOICE_PAUSE, true);
-        else if (c == '/')
+        else if (c == PATH_SEPCH)
             talk_id(VOICE_CHAR_SLASH, true);
 
         while (QUEUE_LEVEL == QUEUE_SIZE - 1) /* queue full - busy loop */
@@ -1080,6 +1080,7 @@ static int _talk_file(const char* filename,
     /* reload needed? */
     if (talk_is_disabled())
         return -1;
+
     if (talk_handle <= 0 || index_handle <= 0)
     {
         fd = open_voicefile();
@@ -1139,12 +1140,12 @@ int talk_file(const char *root, const char *dir, const char *file,
 {
     char buf[MAX_PATH];
     const char *fmt = "%s%s%s%s%s";
-    /* Does root end with a slash */
-    if(root && root[0] && root[strlen(root)-1] != '/')
-        fmt = "%s/%s%s%s%s";
+    /* Does root end with a slash? */
+    if(root && root[0] && root[strlen(root)-1] != PATH_SEPCH)
+        fmt = "%s" PATH_SEPSTR "%s%s%s%s";
     snprintf(buf, MAX_PATH, fmt,
              root ? root : "",
-             dir ? dir : "", dir ? "/" : "",
+             dir ? dir : "", dir ? PATH_SEPSTR : "",
              file ? file : "",
              ext ? ext : "");
     return _talk_file(buf, prefix_ids, enqueue);
@@ -1167,6 +1168,21 @@ int talk_file_or_spell(const char *dirname, const char *filename,
     return 0;
 }
 
+#ifdef HAVE_MULTIVOLUME
+int talk_volume_id(int volume)
+{
+    if (volume == -1)
+        return 0;
+
+    int drive = volume_drive(volume);
+    // XXX voice "VOLUME" or something like that?
+
+    talk_id(drive? LANG_DISK_NAME_MMC : LANG_DISK_NAME_INTERNAL, true);
+    talk_value(volume, UNIT_INT, true);
+    return 1;
+}
+#endif
+
 /* Play a directory's .talk thumbnail, fallback to spelling the filename, or
    go straight to spelling depending on settings. */
 int talk_dir_or_spell(const char* dirname,
@@ -1174,13 +1190,14 @@ int talk_dir_or_spell(const char* dirname,
 {
     if (global_settings.talk_dir_clip)
     {   /* .talk clips enabled */
-        if(talk_file(dirname, NULL, dir_thumbnail_name, NULL,
+        if (talk_file(dirname, NULL, dir_thumbnail_name, NULL,
                               prefix_ids, enqueue) >0)
             return 0;
     }
-    if (global_settings.talk_dir == TALK_SPEAK_SPELL)
+    if (global_settings.talk_dir == TALK_SPEAK_SPELL) {
         /* Either .talk clips disabled or as a fallback */
         return talk_spell_basename(dirname, prefix_ids, enqueue);
+    }
     return 0;
 }
 
@@ -1190,25 +1207,43 @@ int talk_fullpath(const char* path, bool enqueue)
 {
     do_enqueue(enqueue);  /* cut off all the pending stuff */
 
-    if(path[0] != '/')
+    if(path[0] != PATH_SEPCH)
         /* path ought to start with /... */
         return talk_spell(path, true);
     talk_id(VOICE_CHAR_SLASH, true);
     char buf[MAX_PATH];
     strmemccpy(buf, path, MAX_PATH);
     char *start = buf+1; /* start of current component */
-    char *ptr = strchr(start, '/'); /* end of current component */
+    char *ptr = strchr(start, PATH_SEPCH); /* end of current component */
     while(ptr) { /* There are more slashes ahead */
         /* temporarily poke a NULL at end of component to truncate string */
         *ptr = '\0';
-        talk_dir_or_spell(buf, NULL, true);
-        *ptr = '/'; /* restore string */
+#ifdef HAVE_MULTIVOLUME
+        if (start == buf+1) {
+            int vol = path_get_volume_id(buf+1);
+            if (!talk_volume_id(vol))
+                talk_dir_or_spell(buf, NULL, true);
+        } else
+#endif
+            talk_dir_or_spell(buf, NULL, true);
+        *ptr = PATH_SEPCH; /* restore string */
         talk_id(VOICE_CHAR_SLASH, true);
         start = ptr+1; /* setup for next component */
-        ptr = strchr(start, '/');
+        ptr = strchr(start, PATH_SEPCH);
     }
-    /* no more slashes, final component is a filename */
-    return talk_file_or_spell(NULL, buf, NULL, true);
+
+    /* no more slashes, figure out final component */
+    if (!*start) {
+        return 1;
+    }
+
+    DIR* dir = opendir(buf);
+    if (dir) {
+        closedir(dir);
+        return talk_dir_or_spell(buf, NULL, true);
+    } else {
+        return talk_file_or_spell(NULL, buf, NULL, true);
+    }
 }
 
 /* say a numeric value, this word ordering works for english,
@@ -1605,8 +1640,6 @@ void talk_announce_voice_invalid(void)
 
     if (global_settings.talk_menu && talk_status != TALK_STATUS_OK)
     {
-        talk_temp_disable_count = 0xFF; /* don't let anyone else use voice sys */
-
         voice_fd = open(talkfile, O_RDONLY);
         if (voice_fd < 0)
             goto out; /* can't open */
@@ -1632,13 +1665,12 @@ void talk_announce_voice_invalid(void)
             qe.length = qe.remaining = voice_sz;
             queue_clip(&qe, false);
             voice_wait();
-            voice_thread_kill();
         }
 
         mutex_unlock(&read_buffer_mutex);
 
         buf_handle = buflib_free(&clip_ctx, buf_handle);
-        talk_handle = core_free(talk_handle);
+
     out:
         close(voice_fd);
         return;

@@ -34,6 +34,7 @@
 #include "pathfuncs.h"
 #include "string-extra.h"
 #include "debug.h"
+#include "mv.h"
 
 #ifndef os_fstatat
 #define USE_OSDIRNAME /* we need to remember the open directory path */
@@ -193,7 +194,7 @@ static inline int readdir_volume(struct dirstr_desc *dirstr,
 
 /** Internal functions **/
 
-#ifdef HAVE_MULTIDRIVE
+#ifdef HAVE_HOTSWAP
 /**
  * Handle drive extraction by pretending the files' volumes no longer exist
  * and invalidating their I/O for the remainder of their lifetimes as would
@@ -204,20 +205,20 @@ void sim_ext_extracted(int drive)
     for (unsigned int i = 0; i < MAX_OPEN_FILES; i++)
     {
         struct filestr_desc *filestr = &openfiles[i];
-        if (filestr->osfd >= 0 && volume_drive(filestr->volume) == drive)
+        if (filestr->osfd >= 0 IF_MV(&& volume_drive(filestr->volume) == drive))
             filestr->mounted = false;
     }
 
     for (unsigned int i = 0; i < MAX_OPEN_DIRS; i++)
     {
         struct dirstr_desc *dirstr = &opendirs[i];
-        if (dirstr->osdirp && volume_drive(dirstr->volume) == drive)
+        if (dirstr->osdirp IF_MV(&& volume_drive(dirstr->volume) == drive))
             dirstr->mounted = false;
     }
 
     (void)drive;
 }
-#endif /* HAVE_MULTIDRIVE */
+#endif /* HAVE_HOTSWAP */
 
 /**
  * Provides target-like path parsing behavior with single and multiple volumes
@@ -306,22 +307,23 @@ int sim_get_os_path(char *buffer, const char *path, size_t bufsize)
         #ifdef HAVE_MULTIVOLUME
             if (level != 1)
                 break; /* Volume spec only valid @ root level */
+            if (p[-1] != PATH_SEPCH)
+                break;
 
             const char *next;
-            volume = path_strip_volume(p, &next, true);
+            volume = path_strip_volume(p-1, &next, true);
+
             if (volume == ROOT_VOLUME)
                 volume = 0; /* FIXME: root no longer implies volume 0 */
 
             if (next > p)
             {
-            #ifdef HAVE_MULTIDRIVE
                 /* Feign failure if the volume isn't "mounted" */
                 if (!volume_present(volume))
                 {
                     errno = ENXIO;
                     return -1;
                 }
-            #endif /* HAVE_MULTIDRIVE */
 
                 sysroot = false;
 
@@ -691,7 +693,7 @@ struct sim_dirent * sim_readdir(DIR *dirp)
 
     if (readdir_volume(dirstr, entry))
         return entry;
-  
+
     OS_DIRENT_T *osdirent = os_readdir(dirstr->osdirp);
     if (!osdirent)
         return NULL;
@@ -832,7 +834,7 @@ int os_volume_path(IF_MV(int volume, ) char *buffer, size_t bufsize)
     char volname[VOL_MAX_LEN + 1];
     get_volume_name(volume, volname);
 
-    if (path_append(tmpbuf, PA_SEP_HARD, volname, sizeof (volname))
+    if (path_append(tmpbuf, PA_SEP_HARD, volname, sizeof (tmpbuf))
             >= sizeof (volname))
         return -1;
 #endif /* HAVE_MULTIVOLUME */

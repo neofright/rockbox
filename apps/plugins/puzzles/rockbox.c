@@ -7,7 +7,7 @@
  *                     \/            \/     \/    \/            \/
  * $Id$
  *
- * Copyright (C) 2016-2020 Franklin Wei
+ * Copyright (C) 2016-2024 Franklin Wei
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,10 +24,9 @@
  * ================================
  *
  * This file contains the majority of the rockbox-specific code for
- * the sgt-puzzles port. It implements a set of functions for the
- * backend to call to actually run the games, as well as rockbox UI
- * code (menus, input, etc). For a good overview of the rest of the
- * puzzles code, see:
+ * the sgt-puzzles port. It implements an API for the backend to call
+ * to run the games, as well as the rockbox UI code (menus, input,
+ * etc). For a good overview of the rest of the puzzles code, see:
  *
  * <https://www.chiark.greenend.org.uk/~sgtatham/puzzles/devel/>.
  *
@@ -37,7 +36,7 @@
  * Contents of this file
  * ---------------------
  *
- * By rough order of appearnce in this file:
+ * By rough order of appearance in this file:
  *
  *  1) "Zoom" feature
  *
@@ -62,8 +61,7 @@
  *     mode switching. In commit 5094aaa, this behavior was changed so
  *     that the frontend can now query the backend for the on-screen
  *     cursor location and move the viewport accordingly through the
- *     new midend_get_cursor_location() API (which is not yet merged
- *     into Simon's tree as of October 2020).
+ *     new midend_get_cursor_location() API.
  *
  *  2) Font management
  *
@@ -82,8 +80,8 @@
  *
  *  3) Drawing API
  *
- *     The sgt-puzzles backend wants a set of function pointers to the
- *     usual drawing primitives. [1] If the `zoom_enabled' switch is
+ *     The sgt-puzzles backend wants a set of function pointers to
+ *     typical drawing primitives. [1] If the `zoom_enabled' switch is
  *     on, these call upon the "zoomed" drawing routines in (1).
  *
  *     In the normal un-zoomed case, these functions generally rely on
@@ -108,7 +106,7 @@
  *     a) Mouse mode
  *
  *        This mode is designed to accommodate puzzles without a
- *        keyboard or cursor interface (currently only "Loopy"). We
+ *        keyboard or cursor interface (currently only Loopyx). We
  *        remap the cursor keys to move an on-screen cursor rather
  *        than sending arrow keys to the game.
  *
@@ -163,12 +161,21 @@
  *        cases by waiting until a key has been released before we
  *        send the input keystroke(s) to the game.
  *
+ *     e) Key repeat
+ *
+ *        In some games, we would like to send repeated key events to
+ *        allow long drags. Currently, this is only used in Untangle.
+ *
  *  5) Game configuration and preset management
  *
  *     The backend games specify a hierarchy of user-adjustable game
  *     configuration parameters that control aspects of puzzle
  *     generation, etc. Also supplied are a set of "presets" that
  *     specify a predetermined set of configuration parameters.
+ *
+ *     In 2023, Simon introduced a User Preferences system that allows
+ *     further customization of the game UI (e.g., "snap to grid" in
+ *     Untangle). Rockbox support for this was added in July 2024.
  *
  *  6) In-game help
  *
@@ -315,6 +322,7 @@ static struct viewport clip_rect;
 static bool clipped = false, zoom_enabled = false, view_mode = true, mouse_mode = false;
 
 static int mouse_x, mouse_y;
+static bool mouse_dragging = false; /* for sticky mode only */
 
 extern bool audiobuf_available; /* defined in rbmalloc.c */
 
@@ -339,6 +347,7 @@ static struct {
     bool ignore_repeats; /* ignore repeated button events (currently in all games but Untangle) */
     bool rclick_on_hold; /* if in mouse mode, send right-click on long-press of select */
     bool numerical_chooser; /* repurpose select to activate a numerical chooser */
+    bool sticky_mouse; /* if mouse left button should be persistent and toggled on/off */
 } input_settings;
 
 static bool accept_input = true;
@@ -741,12 +750,13 @@ static void rb_color(int n)
         fatal("bad color %d", n);
         return;
     }
-    rb->lcd_set_foreground(colors[n]);
+    if(colors)
+	rb->lcd_set_foreground(colors[n]);
 }
 
 /* clipping is implemented through viewports and offsetting
  * coordinates */
-static void rb_clip(void *handle, int x, int y, int w, int h)
+static void rb_clip(drawing *dr, int x, int y, int w, int h)
 {
     if(!zoom_enabled)
     {
@@ -776,7 +786,7 @@ static void rb_clip(void *handle, int x, int y, int w, int h)
     }
 }
 
-static void rb_unclip(void *handle)
+static void rb_unclip(drawing *dr)
 {
     if(!zoom_enabled)
     {
@@ -793,7 +803,7 @@ static void rb_unclip(void *handle)
     }
 }
 
-static void rb_draw_text(void *handle, int x, int y, int fonttype,
+static void rb_draw_text(drawing *dr, int x, int y, int fonttype,
                          int fontsize, int align, int color, const char *text)
 {
     (void) fontsize;
@@ -858,7 +868,7 @@ static void rb_draw_text(void *handle, int x, int y, int fonttype,
     }
 }
 
-static void rb_draw_rect(void *handle, int x, int y, int w, int h, int color)
+static void rb_draw_rect(drawing *dr, int x, int y, int w, int h, int color)
 {
     rb_color(color);
     if(!zoom_enabled)
@@ -1000,7 +1010,7 @@ static void draw_antialiased_line(fb_data *fb, int w, int h, int x0, int y0, int
     }
 }
 
-static void rb_draw_line(void *handle, int x1, int y1, int x2, int y2,
+static void rb_draw_line(drawing *dr, int x1, int y1, int x2, int y2,
                          int color)
 {
     rb_color(color);
@@ -1028,349 +1038,7 @@ static void rb_draw_line(void *handle, int x1, int y1, int x2, int y2,
     }
 }
 
-#if 0
-/*
- * draw filled polygon
- * originally by Sebastian Leonhardt (ulmutul)
- * 'count' : number of coordinate pairs
- * 'pxy': array of coordinates. pxy[0]=x0,pxy[1]=y0,...
- * note: provide space for one extra coordinate, because the starting point
- * will automatically be inserted as end point.
- */
-
-/*
- * helper function:
- * find points of intersection between polygon and scanline
- */
-
-#define MAX_INTERSECTION 32
-
-static void fill_poly_line(int scanline, int count, int *pxy)
-{
-    int i;
-    int j;
-    int num_of_intersects;
-    int direct, old_direct;
-    //intersections of every line with scanline (y-coord)
-    int intersection[MAX_INTERSECTION];
-    /* add starting point as ending point */
-    pxy[count*2] = pxy[0];
-    pxy[count*2+1] = pxy[1];
-
-    old_direct=0;
-    num_of_intersects=0;
-    for (i=0; i<count*2; i+=2) {
-        int x1=pxy[i];
-        int y1=pxy[i+1];
-        int x2=pxy[i+2];
-        int y2=pxy[i+3];
-        // skip if line is outside of scanline
-        if (y1 < y2) {
-            if (scanline < y1 || scanline > y2)
-                continue;
-        }
-        else {
-            if (scanline < y2 || scanline > y1)
-                continue;
-        }
-        // calculate x-coord of intersection
-        if (y1==y2) {
-            direct=0;
-        }
-        else {
-            direct = y1>y2 ? 1 : -1;
-            // omit double intersections, if both lines lead in the same direction
-            intersection[num_of_intersects] =
-                x1+((scanline-y1)*(x2-x1))/(y2-y1);
-            if ( (direct!=old_direct)
-                 || (intersection[num_of_intersects] != intersection[num_of_intersects-1])
-                )
-                ++num_of_intersects;
-        }
-        old_direct = direct;
-    }
-
-    // sort points of intersection
-    for (i=0; i<num_of_intersects-1; ++i) {
-        for (j=i+1; j<num_of_intersects; ++j) {
-            if (intersection[j]<intersection[i]) {
-                int temp=intersection[i];
-                intersection[i]=intersection[j];
-                intersection[j]=temp;
-            }
-        }
-    }
-    // draw
-    for (i=0; i<num_of_intersects; i+=2) {
-        rb->lcd_hline(intersection[i], intersection[i+1], scanline);
-    }
-}
-
-/* two extra elements at end of pxy needed */
-static void v_fillarea(int count, int *pxy)
-{
-    int i;
-    int y1, y2;
-
-    // find min and max y coords
-    y1=y2=pxy[1];
-    for (i=3; i<count*2; i+=2) {
-        if (pxy[i] < y1) y1 = pxy[i];
-        else if (pxy[i] > y2) y2 = pxy[i];
-    }
-
-    for (i=y1; i<=y2; ++i) {
-        fill_poly_line(i, count, pxy);
-    }
-}
-#endif
-
-/* I'm a horrible person: this was copy-pasta'd straight from
- * xlcd_draw.c */
-
-/* sort the given coordinates by increasing x value */
-static void sort_points_by_increasing_x(int* x1, int* y1,
-                                        int* x2, int* y2,
-                                        int* x3, int* y3)
-{
-    int x, y;
-    if (*x1 > *x3)
-    {
-        if (*x2 < *x3)       /* x2 < x3 < x1 */
-        {
-            x = *x1; *x1 = *x2; *x2 = *x3; *x3 = x;
-            y = *y1; *y1 = *y2; *y2 = *y3; *y3 = y;
-        }
-        else if (*x2 > *x1)  /* x3 < x1 < x2 */
-        {
-            x = *x1; *x1 = *x3; *x3 = *x2; *x2 = x;
-            y = *y1; *y1 = *y3; *y3 = *y2; *y2 = y;
-        }
-        else               /* x3 <= x2 <= x1 */
-        {
-            x = *x1; *x1 = *x3; *x3 = x;
-            y = *y1; *y1 = *y3; *y3 = y;
-        }
-    }
-    else
-    {
-        if (*x2 < *x1)       /* x2 < x1 <= x3 */
-        {
-            x = *x1; *x1 = *x2; *x2 = x;
-            y = *y1; *y1 = *y2; *y2 = y;
-        }
-        else if (*x2 > *x3)  /* x1 <= x3 < x2 */
-        {
-            x = *x2; *x2 = *x3; *x3 = x;
-            y = *y2; *y2 = *y3; *y3 = y;
-        }
-        /* else already sorted */
-    }
-}
-
-#define sort_points_by_increasing_y(x1, y1, x2, y2, x3, y3)     \
-    sort_points_by_increasing_x(y1, x1, y2, x2, y3, x3)
-
-/* draw a filled triangle, using horizontal lines for speed */
-static void zoom_filltriangle(int x1, int y1,
-                              int x2, int y2,
-                              int x3, int y3)
-{
-    long fp_x1, fp_x2, fp_dx1, fp_dx2;
-    int y;
-    sort_points_by_increasing_y(&x1, &y1, &x2, &y2, &x3, &y3);
-
-    if (y1 < y3)  /* draw */
-    {
-        fp_dx1 = ((x3 - x1) << 16) / (y3 - y1);
-        fp_x1  = (x1 << 16) + (1<<15) + (fp_dx1 >> 1);
-
-        if (y1 < y2)  /* first part */
-        {
-            fp_dx2 = ((x2 - x1) << 16) / (y2 - y1);
-            fp_x2  = (x1 << 16) + (1<<15) + (fp_dx2 >> 1);
-            for (y = y1; y < y2; y++)
-            {
-                zoom_hline(fp_x1 >> 16, fp_x2 >> 16, y);
-                fp_x1 += fp_dx1;
-                fp_x2 += fp_dx2;
-            }
-        }
-        if (y2 < y3)  /* second part */
-        {
-            fp_dx2 = ((x3 - x2) << 16) / (y3 - y2);
-            fp_x2 = (x2 << 16) + (1<<15) + (fp_dx2 >> 1);
-            for (y = y2; y < y3; y++)
-            {
-                zoom_hline(fp_x1 >> 16, fp_x2 >> 16, y);
-                fp_x1 += fp_dx1;
-                fp_x2 += fp_dx2;
-            }
-        }
-    }
-}
-
-/* Should probably refactor this */
-static void rb_draw_poly(void *handle, int *coords, int npoints,
-                         int fillcolor, int outlinecolor)
-{
-    if(!zoom_enabled)
-    {
-        LOGF("rb_draw_poly");
-
-        if(fillcolor >= 0)
-        {
-            rb_color(fillcolor);
-#if 1
-            /* serious hack: draw a bunch of triangles between adjacent points */
-            /* this generally works, even with some concave polygons */
-            for(int i = 2; i < npoints; ++i)
-            {
-                int x1, y1, x2, y2, x3, y3;
-                x1 = coords[0];
-                y1 = coords[1];
-                x2 = coords[(i - 1) * 2];
-                y2 = coords[(i - 1) * 2 + 1];
-                x3 = coords[i * 2];
-                y3 = coords[i * 2 + 1];
-                offset_coords(&x1, &y1);
-                offset_coords(&x2, &y2);
-                offset_coords(&x3, &y3);
-                xlcd_filltriangle(x1, y1,
-                                  x2, y2,
-                                  x3, y3);
-
-#ifdef DEBUG_MENU
-                if(debug_settings.polyanim)
-                {
-                    rb->lcd_update();
-                    rb->sleep(HZ/4);
-                }
-#endif
-#if 0
-                /* debug code */
-                rb->lcd_set_foreground(LCD_RGBPACK(255,0,0));
-                rb->lcd_drawpixel(x1, y1);
-                rb->lcd_drawpixel(x2, y2);
-                rb->lcd_drawpixel(x3, y3);
-                rb->lcd_update();
-                rb->sleep(HZ);
-                rb_color(fillcolor);
-                rb->lcd_drawpixel(x1, y1);
-                rb->lcd_drawpixel(x2, y2);
-                rb->lcd_drawpixel(x3, y3);
-                rb->lcd_update();
-#endif
-            }
-#else
-            int *pxy = smalloc(sizeof(int) * 2 * npoints + 2);
-            /* copy points, offsetted */
-            for(int i = 0; i < npoints; ++i)
-            {
-                pxy[2 * i + 0] = coords[2 * i + 0];
-                pxy[2 * i + 1] = coords[2 * i + 1];
-                offset_coords(&pxy[2*i+0], &pxy[2*i+1]);
-            }
-            v_fillarea(npoints, pxy);
-            sfree(pxy);
-#endif
-        }
-
-        /* draw outlines last so they're not covered by the fill */
-        assert(outlinecolor >= 0);
-        rb_color(outlinecolor);
-
-        for(int i = 1; i < npoints; ++i)
-        {
-            int x1, y1, x2, y2;
-            x1 = coords[2 * (i - 1)];
-            y1 = coords[2 * (i - 1) + 1];
-            x2 = coords[2 * i];
-            y2 = coords[2 * i + 1];
-            if(debug_settings.no_aa)
-            {
-                offset_coords(&x1, &y1);
-                offset_coords(&x2, &y2);
-                rb->lcd_drawline(x1, y1,
-                                 x2, y2);
-            }
-            else
-                draw_antialiased_line(lcd_fb, LCD_WIDTH, LCD_HEIGHT, x1, y1, x2, y2);
-
-#ifdef DEBUG_MENU
-            if(debug_settings.polyanim)
-            {
-                rb->lcd_update();
-                rb->sleep(HZ/4);
-            }
-#endif
-        }
-
-        int x1, y1, x2, y2;
-        x1 = coords[0];
-        y1 = coords[1];
-        x2 = coords[2 * (npoints - 1)];
-        y2 = coords[2 * (npoints - 1) + 1];
-        if(debug_settings.no_aa)
-        {
-            offset_coords(&x1, &y1);
-            offset_coords(&x2, &y2);
-
-            rb->lcd_drawline(x1, y1,
-                             x2, y2);
-        }
-        else
-            draw_antialiased_line(lcd_fb, LCD_WIDTH, LCD_HEIGHT, x1, y1, x2, y2);
-    }
-    else
-    {
-        LOGF("rb_draw_poly");
-
-        if(fillcolor >= 0)
-        {
-            rb_color(fillcolor);
-
-            /* serious hack: draw a bunch of triangles between adjacent points */
-            /* this generally works, even with some concave polygons */
-            for(int i = 2; i < npoints; ++i)
-            {
-                int x1, y1, x2, y2, x3, y3;
-                x1 = coords[0];
-                y1 = coords[1];
-                x2 = coords[(i - 1) * 2];
-                y2 = coords[(i - 1) * 2 + 1];
-                x3 = coords[i * 2];
-                y3 = coords[i * 2 + 1];
-                zoom_filltriangle(x1, y1,
-                                  x2, y2,
-                                  x3, y3);
-            }
-        }
-
-        /* draw outlines last so they're not covered by the fill */
-        assert(outlinecolor >= 0);
-        rb_color(outlinecolor);
-
-        for(int i = 1; i < npoints; ++i)
-        {
-            int x1, y1, x2, y2;
-            x1 = coords[2 * (i - 1)];
-            y1 = coords[2 * (i - 1) + 1];
-            x2 = coords[2 * i];
-            y2 = coords[2 * i + 1];
-            draw_antialiased_line(zoom_fb, zoom_w, zoom_h, x1, y1, x2, y2);
-        }
-
-        int x1, y1, x2, y2;
-        x1 = coords[0];
-        y1 = coords[1];
-        x2 = coords[2 * (npoints - 1)];
-        y2 = coords[2 * (npoints - 1) + 1];
-        draw_antialiased_line(zoom_fb, zoom_w, zoom_h, x1, y1, x2, y2);
-    }
-}
-
-static void rb_draw_circle(void *handle, int cx, int cy, int radius,
+static void rb_draw_circle(drawing *dr, int cx, int cy, int radius,
                            int fillcolor, int outlinecolor)
 {
     if(!zoom_enabled)
@@ -1442,7 +1110,7 @@ static void trim_rect(int *x, int *y, int *w, int *h)
     *h = y1 - y0;
 }
 
-static blitter *rb_blitter_new(void *handle, int w, int h)
+static blitter *rb_blitter_new(drawing *dr, int w, int h)
 {
     LOGF("rb_blitter_new");
     blitter *b = snew(blitter);
@@ -1453,7 +1121,7 @@ static blitter *rb_blitter_new(void *handle, int w, int h)
     return b;
 }
 
-static void rb_blitter_free(void *handle, blitter *bl)
+static void rb_blitter_free(drawing *dr, blitter *bl)
 {
     LOGF("rb_blitter_free");
     sfree(bl->bmp.data);
@@ -1462,7 +1130,7 @@ static void rb_blitter_free(void *handle, blitter *bl)
 }
 
 /* copy a section of the framebuffer */
-static void rb_blitter_save(void *handle, blitter *bl, int x, int y)
+static void rb_blitter_save(drawing *dr, blitter *bl, int x, int y)
 {
     /* no viewport offset */
 #if LCD_STRIDEFORMAT == VERTICAL_STRIDE
@@ -1491,7 +1159,7 @@ static void rb_blitter_save(void *handle, blitter *bl, int x, int y)
 #endif
 }
 
-static void rb_blitter_load(void *handle, blitter *bl, int x, int y)
+static void rb_blitter_load(drawing *dr, blitter *bl, int x, int y)
 {
     LOGF("rb_blitter_load");
     if(!bl->have_data)
@@ -1521,7 +1189,7 @@ static void rb_blitter_load(void *handle, blitter *bl, int x, int y)
     }
 }
 
-static void rb_draw_update(void *handle, int x, int y, int w, int h)
+static void rb_draw_update(drawing *dr, int x, int y, int w, int h)
 {
     LOGF("rb_draw_update(%d, %d, %d, %d)", x, y, w, h);
 
@@ -1545,9 +1213,9 @@ static void rb_draw_update(void *handle, int x, int y, int w, int h)
     need_draw_update = true;
 }
 
-static void rb_start_draw(void *handle)
+static void rb_start_draw(drawing *dr)
 {
-    (void) handle;
+    (void) dr;
 
     /* ... mumble mumble ... not ... reentrant ... mumble mumble ... */
 
@@ -1558,9 +1226,9 @@ static void rb_start_draw(void *handle)
     ud_d = LCD_HEIGHT;
 }
 
-static void rb_end_draw(void *handle)
+static void rb_end_draw(drawing *dr)
 {
-    (void) handle;
+    (void) dr;
 
     if(debug_settings.highlight_cursor)
     {
@@ -1587,7 +1255,7 @@ static void rb_end_draw(void *handle)
 #endif
 }
 
-static void rb_status_bar(void *handle, const char *text)
+static void rb_status_bar(drawing *dr, const char *text)
 {
     if(titlebar)
         sfree(titlebar);
@@ -1619,7 +1287,8 @@ static void draw_title(bool clear_first)
     rb->lcd_setfont(cur_font = FONT_UI);
     rb->lcd_getstringsize(str, &w, &h);
 
-    rb->lcd_set_foreground(BG_COLOR);
+
+    rb->lcd_set_foreground(colors ? colors[0] : BG_COLOR);
     rb->lcd_fillrect(0, LCD_HEIGHT - h, clear_first ? LCD_WIDTH : w, h);
 
     rb->lcd_set_drawmode(DRMODE_FG);
@@ -1685,7 +1354,7 @@ static void draw_mouse(void)
  * glyph exists in a font) */
 #if 0
 /* See: https://www.chiark.greenend.org.uk/~sgtatham/puzzles/devel/drawing.html#drawing-text-fallback */
-static char *rb_text_fallback(void *handle, const char *const *strings,
+static char *rb_text_fallback(drawing *dr, const char *const *strings,
                               int nstrings)
 {
     struct font *pf = rb->font_get(cur_font);
@@ -1718,10 +1387,11 @@ static char *rb_text_fallback(void *handle, const char *const *strings,
 #endif
 
 const drawing_api rb_drawing = {
+    1,
     rb_draw_text,
     rb_draw_rect,
     rb_draw_line,
-    rb_draw_poly,
+    draw_polygon_fallback,
     rb_draw_circle,
     rb_draw_update,
     rb_clip,
@@ -2016,9 +1686,17 @@ static int process_input(int tmo, bool do_pausemenu)
                 LOGF("sending left click");
                 send_click(LEFT_BUTTON, true); /* right-click is handled earlier */
             }
-        }
-        else
-        {
+        } else if(input_settings.sticky_mouse) {
+	    if(pressed & BTN_FIRE) {
+		send_click(LEFT_BUTTON, false);
+		accept_input = false;
+		mouse_dragging = !mouse_dragging;
+	    } else if(mouse_dragging) {
+		send_click(LEFT_DRAG, false);
+	    } else {
+		send_click(LEFT_RELEASE, false);
+	    }
+	} else {
             if(pressed & BTN_FIRE) {
                 send_click(LEFT_BUTTON, false);
                 accept_input = false;
@@ -2268,7 +1946,7 @@ static void zoom(void)
     zoom_clipl = 0;
     zoom_clipr = zoom_w;
 
-    midend_size(me, &zoom_w, &zoom_h, true);
+    midend_size(me, &zoom_w, &zoom_h, true, 1.0);
 
     /* Allocating the framebuffer will mostly likely grab the
      * audiobuffer, which will make impossible to load new fonts, and
@@ -2448,7 +2126,6 @@ static int list_choose(const char *list_str, const char *title, int sel)
     struct gui_synclist list;
 
     rb->gui_synclist_init(&list, &config_choices_formatter, (void*)list_str, false, 1, NULL);
-    rb->gui_synclist_set_icon_callback(&list, NULL);
     rb->gui_synclist_set_nb_items(&list, n);
 
     rb->gui_synclist_select_item(&list, sel);
@@ -2634,10 +2311,10 @@ const char *config_formatter(int sel, void *data, char *buf, size_t len)
     return buf;
 }
 
-static bool config_menu(void)
+static bool config_menu_core(int which)
 {
     char *title;
-    config_item *config = midend_get_config(me, CFG_SETTINGS, &title);
+    config_item *config = midend_get_config(me, which, &title);
 
     rb->lcd_setfont(cur_font = FONT_UI);
 
@@ -2661,7 +2338,6 @@ static bool config_menu(void)
     struct gui_synclist list;
 
     rb->gui_synclist_init(&list, &config_formatter, config, false, 1, NULL);
-    rb->gui_synclist_set_icon_callback(&list, NULL);
     rb->gui_synclist_set_nb_items(&list, n);
 
     rb->gui_synclist_select_item(&list, 0);
@@ -2689,7 +2365,7 @@ static bool config_menu(void)
                 old_str = dupstr(old.u.string.sval);
 
             bool freed_str = do_configure_item(config, pos);
-            const char *err = midend_set_config(me, CFG_SETTINGS, config);
+            const char *err = midend_set_config(me, which, config);
 
             if(err)
             {
@@ -2728,6 +2404,16 @@ done:
     return success;
 }
 
+static bool config_menu(void)
+{
+    return config_menu_core(CFG_SETTINGS);
+}
+
+static bool preferences_menu(void)
+{
+    return config_menu_core(CFG_PREFS);
+}
+
 static const char *preset_formatter(int sel, void *data, char *buf, size_t len)
 {
     struct preset_menu *menu = data;
@@ -2746,7 +2432,6 @@ static int do_preset_menu(struct preset_menu *menu, char *title, int selected)
     struct gui_synclist list;
 
     rb->gui_synclist_init(&list, &preset_formatter, menu, false, 1, NULL);
-    rb->gui_synclist_set_icon_callback(&list, NULL);
     rb->gui_synclist_set_nb_items(&list, menu->n_entries);
 
     rb->gui_synclist_select_item(&list, selected);
@@ -2809,6 +2494,7 @@ static bool presets_menu(void)
 
 static void quick_help(void)
 {
+#ifndef NO_HELP_TEXT
 #if defined(FOR_REAL) && defined(DEBUG_MENU)
     if(++help_times >= 5)
     {
@@ -2819,11 +2505,12 @@ static void quick_help(void)
 
     rb->splash(0, quick_help_text);
     rb->button_get(true);
-    return;
+#endif
 }
 
 static void full_help(const char *name)
 {
+#ifndef NO_HELP_TEXT
     unsigned old_bg = rb->lcd_get_background();
 
     bool orig_clipped = clipped;
@@ -2878,6 +2565,7 @@ static void full_help(const char *name)
 
     if(orig_clipped)
         rb_clip(NULL, clip_rect.x, clip_rect.y, clip_rect.width, clip_rect.height);
+#endif
 }
 
 static void init_default_settings(void)
@@ -3028,6 +2716,11 @@ static int pausemenu_cb(int action,
             if(!midend_which_game(me)->can_solve)
                 return ACTION_EXIT_MENUITEM;
             break;
+	case 7:
+	case 8:
+	    if(!help_valid)
+		return ACTION_EXIT_MENUITEM;
+	    break;
         case 9:
             if(audiobuf_available)
                 break;
@@ -3078,7 +2771,7 @@ static void reset_drawing(void)
     rb->lcd_set_viewport(NULL);
     rb->lcd_set_backdrop(NULL);
     rb->lcd_set_foreground(LCD_BLACK);
-    rb->lcd_set_background(BG_COLOR);
+    rb->lcd_set_background(colors ? colors[0] : BG_COLOR);
 }
 
 /* Make a new game, but tell the user through a splash so they don't
@@ -3108,8 +2801,9 @@ static int pause_menu(void)
                         "Game Type",           // 10
                         "Debug Menu",          // 11
                         "Configure Game",      // 12
-                        "Quit without Saving", // 13
-                        "Quit");               // 14
+			"Preferences",         // 13
+                        "Quit without Saving", // 14
+                        "Quit");               // 15
 
 #if defined(FOR_REAL) && defined(DEBUG_MENU)
     help_times = 0;
@@ -3190,15 +2884,19 @@ static int pause_menu(void)
                 quit = true;
             }
             break;
-        case 13:
-            return -2;
+	case 13:
+	    preferences_menu();
+	    // do not go straight into game.
+	    break;
         case 14:
+            return -2;
+        case 15:
             return -3;
         default:
             break;
         }
     }
-    rb->lcd_set_background(BG_COLOR);
+    rb->lcd_set_background(colors ? colors[0] : BG_COLOR);
     rb->lcd_clear_display();
     midend_force_redraw(me);
     rb->lcd_update();
@@ -3217,7 +2915,7 @@ static void fix_size(void)
     rb->lcd_setfont(cur_font = FONT_UI);
     rb->lcd_getstringsize("X", NULL, &h_x);
     h -= h_x;
-    midend_size(me, &w, &h, true);
+    midend_size(me, &w, &h, true, 1.0);
 }
 
 static void init_tlsf(void)
@@ -3245,6 +2943,7 @@ static void init_colors(void)
     float *floatcolors = midend_colors(me, &ncolors);
 
     /* convert them to packed RGB */
+    sfree(colors);
     colors = smalloc(ncolors * sizeof(unsigned));
     unsigned *ptr = colors;
     float *floatptr = floatcolors;
@@ -3277,32 +2976,39 @@ static bool string_in_list(const char *target, const char **list)
 static void tune_input(const char *name)
 {
     static const char *want_spacebar[] = {
+	"Black Box",
+	"Bridges",
+	"Galaxies",
+	"Keen",
         "Magnets",
         "Map",
         "Mines",
         "Palisade",
+	"Pattern",
         "Rectangles",
+	"Signpost",
+	"Singles",
+	"Solo",
+	"Tents",
+	"Towers",
+	"Unequal",
+	"Group",
         NULL
     };
 
-    /* these get a spacebar on long click - you must also add to the
-     * falling_edge list below! */
+    /* these get a spacebar on long click - this implicitly enables
+     * falling-edge button events (see below)! */
     input_settings.want_spacebar = string_in_list(name, want_spacebar);
 
     static const char *falling_edge[] = {
         "Inertia",
-        "Magnets",
-        "Map",
-        "Mines",
-        "Palisade",
-        "Rectangles",
         NULL
     };
 
     /* wait until a key is released to send an action (useful for
      * chording in Inertia; must be enabled if the game needs a
      * spacebar) */
-    input_settings.falling_edge = string_in_list(name, falling_edge);
+    input_settings.falling_edge = string_in_list(name, falling_edge) || input_settings.want_spacebar;
 
     /* For want_spacebar to work, events must be sent on the falling
      * edge */
@@ -3322,6 +3028,7 @@ static void tune_input(const char *name)
     static const char *no_rclick_on_hold[] = {
         "Map",
         "Signpost",
+	"Slide",
         "Untangle",
         NULL
     };
@@ -3330,10 +3037,20 @@ static void tune_input(const char *name)
 
     static const char *mouse_games[] = {
         "Loopy",
+	"Slide",
         NULL
     };
 
     mouse_mode = string_in_list(name, mouse_games);
+
+    static const char *sticky_mouse_games[] = {
+	"Map",
+	"Signpost",
+	"Slide",
+	"Untangle",
+    };
+
+    input_settings.sticky_mouse = string_in_list(name, sticky_mouse_games);
 
     static const char *number_chooser_games[] = {
         "Filling",
@@ -3627,8 +3344,11 @@ static int mainmenu_cb(int action,
             if(!load_success)
                 return ACTION_EXIT_MENUITEM;
             break;
+	case 2:
         case 3:
-            break;
+	    if(!help_valid)
+		return ACTION_EXIT_MENUITEM;
+	    break;
         case 4:
             if(audiobuf_available)
                 break;
@@ -3691,8 +3411,9 @@ static void puzzles_main(void)
                         "Playback Control",    // 4
                         "Game Type",           // 5
                         "Configure Game",      // 6
-                        "Quit without Saving", // 7
-                        "Quit");               // 8
+			"Preferences",         // 7
+                        "Quit without Saving", // 8
+                        "Quit");               // 9
 
     bool quit = false;
     int sel = 0;
@@ -3738,11 +3459,14 @@ static void puzzles_main(void)
                 goto game_loop;
             }
             break;
-        case 8:
+	case 7:
+	    preferences_menu();
+	    break;
+        case 9:
             if(load_success)
                 save_game();
             /* fall through */
-        case 7:
+        case 8:
             /* we don't care about freeing anything because tlsf will
              * be wiped out the next time around */
             return;
@@ -3787,12 +3511,14 @@ static void puzzles_main(void)
                     /* quit without saving */
                     midend_free(me);
                     sfree(colors);
+		    colors = NULL;
                     return;
                 case -3:
                     /* save and quit */
                     save_game();
                     midend_free(me);
                     sfree(colors);
+		    colors = NULL;
                     return;
                 default:
                     break;
@@ -3822,6 +3548,7 @@ static void puzzles_main(void)
             rb->yield();
         }
         sfree(colors);
+	colors = NULL;
     }
 }
 

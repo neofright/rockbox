@@ -4,7 +4,6 @@
 #   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
 #   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
 #                     \/            \/     \/    \/            \/
-# $Id$
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -35,6 +34,7 @@
 # - Kai Posadowsky
 # - Udo Schläpfer
 # - Johannes Rauh
+# - Wilfried Winkler
 <phrase>
   id: LANG_SET_BOOL_YES
   desc: bool true representation
@@ -490,10 +490,10 @@
   desc: top item in the list when asking user about bookmark auto load
   user: core
   <source>
-    *: "<Don't Resume>"
+    *: "[Don't Resume]"
   </source>
   <dest>
-    *: "<Nicht fortsetzen>"
+    *: "[Nicht fortsetzen]"
   </dest>
   <voice>
     *: "Nicht fortsetzen"
@@ -518,10 +518,10 @@
   desc: bookmark selection list, bookmark couldn't be parsed
   user: core
   <source>
-    *: "<Invalid Bookmark>"
+    *: "[Invalid Bookmark]"
   </source>
   <dest>
-    *: "<Ungültiges Lesezeichen>"
+    *: "[Ungültiges Lesezeichen]"
   </dest>
   <voice>
     *: "Ungültiges Lesezeichen"
@@ -2112,13 +2112,13 @@
 </phrase>
 <phrase>
   id: LANG_TAGNAVI_ALL_TRACKS
-  desc: "<All tracks>" entry in tag browser
+  desc: "[All tracks]" entry in tag browser
   user: core
   <source>
-    *: "<All tracks>"
+    *: "[All tracks]"
   </source>
   <dest>
-    *: "<Alle Titel>"
+    *: "[Alle Titel]"
   </dest>
   <voice>
     *: "Alle Titel"
@@ -3271,7 +3271,7 @@
   </dest>
   <voice>
     *: none
-    buttonlight_brightness: "Tastenbeleuchtung: Helligkeit"
+    buttonlight_brightness: "Tastenbeleuchtung Helligkeit"
   </voice>
 </phrase>
 <phrase>
@@ -5917,7 +5917,7 @@
     *: "Frei:"
   </dest>
   <voice>
-    *: "Freier Plattenplatz:"
+    *: "Freier Plattenplatz"
   </voice>
 </phrase>
 <phrase>
@@ -6559,10 +6559,10 @@
   desc: in tag viewer
   user: core
   <source>
-    *: "<No Info>"
+    *: "[No Info]"
   </source>
   <dest>
-    *: "<keine Info>"
+    *: "[keine Info]"
   </dest>
   <voice>
     *: "keine Info"
@@ -7031,7 +7031,7 @@
     *: "Modus:"
   </dest>
   <voice>
-    *: "Modus:"
+    *: "Modus"
   </voice>
 </phrase>
 <phrase>
@@ -8693,7 +8693,7 @@
   </dest>
   <voice>
     *: none
-    rtc: "Uhrzeit:"
+    rtc: "Uhrzeit"
   </voice>
 </phrase>
 <phrase>
@@ -8722,20 +8722,6 @@
   </dest>
   <voice>
     *: "Grenzfrequenz"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_SYSFONT_GAIN
-  desc: in the equalizer settings menu
-  user: core
-  <source>
-    *: "Gain"
-  </source>
-  <dest>
-    *: "Verstärkg."
-  </dest>
-  <voice>
-    *: "Verstärkung"
   </voice>
 </phrase>
 <phrase>
@@ -9207,13 +9193,13 @@
 </phrase>
 <phrase>
   id: LANG_TAGNAVI_RANDOM
-  desc: "<Random>" entry in tag browser
+  desc: "[Random]" entry in tag browser
   user: core
   <source>
-    *: "<Random>"
+    *: "[Random]"
   </source>
   <dest>
-    *: "<Zufällig>"
+    *: "[Zufällig]"
   </dest>
   <voice>
     *: "Zufällig"
@@ -10363,7 +10349,7 @@
     *: "Danach:"
   </dest>
   <voice>
-    *: "Danach:"
+    *: "Danach"
   </voice>
 </phrase>
 <phrase>
@@ -10628,7 +10614,7 @@
     *: "Nächster Titel:"
   </dest>
   <voice>
-    *: "Nächster Titel:"
+    *: "Nächster Titel"
   </voice>
 </phrase>
 <phrase>
@@ -10907,13 +10893,13 @@
 </phrase>
 <phrase>
   id: LANG_TAGNAVI_UNTAGGED
-  desc: "<untagged>" entry in tag browser
+  desc: "[untagged]" entry in tag browser
   user: core
   <source>
-    *: "<Untagged>"
+    *: "[Untagged]"
   </source>
   <dest>
-    *: "<Unbekannt>"
+    *: "[Unbekannt]"
   </dest>
   <voice>
     *: "Unbekannt"
@@ -11221,7 +11207,7 @@
   </dest>
   <voice>
     *: none
-    radio: "Signalstärke:"
+    radio: "Signalstärke"
   </voice>
 </phrase>
 <phrase>
@@ -11784,20 +11770,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_SYSFONT_EQUALIZER_BAND_Q
-  desc: in the equalizer settings menu
-  user: core
-  <source>
-    *: "Q"
-  </source>
-  <dest>
-    *: "~Q"
-  </dest>
-  <voice>
-    *: "~Q"
-  </voice>
-</phrase>
-<phrase>
   id: LANG_FILTER_SHARP
   desc: in sound settings
   user: core
@@ -12091,7 +12063,7 @@
     *: "Level 5: 40 Züge/ 60 min"
   </dest>
   <voice>
-    *: "Level 5: 40 Züge pro 60 Minuten"
+    *: "Level 5, 40 Züge pro 60 Minuten"
   </voice>
 </phrase>
 <phrase>
@@ -12130,10 +12102,10 @@
   desc: playing time screen
   user: core
   <source>
-    *: "Track remaining: %s"
+    *: "Track remaining:"
   </source>
   <dest>
-    *: "Titel verbleibend: %s"
+    *: "Titel verbleibend:"
   </dest>
   <voice>
     *: "Titel verbleibend"
@@ -12256,10 +12228,10 @@
   desc: playing time screen
   user: core
   <source>
-    *: "Playlist elapsed: %s / %s %ld%%"
+    *: "Playlist elapsed:"
   </source>
   <dest>
-    *: "Wiedergabeliste vergangen: %s / %s %ld%%"
+    *: "Wiedergabeliste vergangen:"
   </dest>
   <voice>
     *: "Wiedergabeliste vergangen"
@@ -12391,7 +12363,7 @@
     *: "Level 1: 60 Züge/ 5 min"
   </dest>
   <voice>
-    *: "Level 1: 60 Züge pro 5 Minuten"
+    *: "Level 1, 60 Züge pro 5 Minuten"
   </voice>
 </phrase>
 <phrase>
@@ -12430,10 +12402,10 @@
   desc: playing time screen
   user: core
   <source>
-    *: "Track %d / %d %d%%"
+    *: "Track:"
   </source>
   <dest>
-    *: "Titel %d / %d %d%%"
+    *: "Titel:"
   </dest>
   <voice>
     *: "Titel"
@@ -12565,7 +12537,7 @@
     *: "Level 2: 60 Züge / 15 min"
   </dest>
   <voice>
-    *: "Level 2: 60 Züge pro 15 Minuten"
+    *: "Level 2, 60 Züge pro 15 Minuten"
   </voice>
 </phrase>
 <phrase>
@@ -12773,7 +12745,7 @@
     *: "Level 7: 40 Züge / 240 min"
   </dest>
   <voice>
-    *: "Level 7: 40 Züge pro 240 Minuten"
+    *: "Level 7, 40 Züge pro 240 Minuten"
   </voice>
 </phrase>
 <phrase>
@@ -13068,7 +13040,7 @@
     *: "Level 9: 1 Züge / 60 min"
   </dest>
   <voice>
-    *: "Level 9: 1 Züge pro 60 Minuten"
+    *: "Level 9, 1 Züge pro 60 Minuten"
   </voice>
 </phrase>
 <phrase>
@@ -13118,10 +13090,10 @@
   desc: playing time screen
   user: core
   <source>
-    *: "Storage: %s (done %s, remaining %s)"
+    *: "Storage (Done / Remaining):"
   </source>
   <dest>
-    *: "Speicher: %s (done %s, remaining %s)"
+    *: "Speicher (fertig/ verbleibend):"
   </dest>
   <voice>
     *: "Speicher"
@@ -13183,7 +13155,7 @@
     *: "Level 3: 60 Züge / 30 min"
   </dest>
   <voice>
-    *: "Level 3: 60 Züge pro 30 Minuten"
+    *: "Level 3, 60 Züge pro 30 Minuten"
   </voice>
 </phrase>
 <phrase>
@@ -13578,16 +13550,16 @@
 </phrase>
 <phrase>
   id: LANG_PLAYTIME_REMAINING
-  desc: playing time screen
+  desc: deprecated
   user: core
   <source>
-    *: "Playlist remaining: %s"
+    *: ""
   </source>
   <dest>
-    *: "Wiedrgabeliste verbleibend: %s"
+    *: ""
   </dest>
   <voice>
-    *: "Wiedrgabeliste verbleibend"
+    *: ""
   </voice>
 </phrase>
 <phrase>
@@ -13708,7 +13680,7 @@
     *: "Level 4: 40 Züge / 30 min"
   </dest>
   <voice>
-    *: "Level 4: 40 Züge pro 30 Minuten"
+    *: "Level 4, 40 Züge pro 30 Minuten"
   </voice>
 </phrase>
 <phrase>
@@ -13873,10 +13845,10 @@
   desc: playing time screen
   user: core
   <source>
-    *: "Track elapsed: %s / %s %ld%%"
+    *: "Track elapsed:"
   </source>
   <dest>
-    *: "Titel vergangen: %s / %s %ld%%"
+    *: "Titel vergangen:"
   </dest>
   <voice>
     *: "Titel vergangen"
@@ -13929,10 +13901,10 @@
   desc: playing time screen
   user: core
   <source>
-    *: "Average bitrate: %ld kbps"
+    *: "Average bitrate:"
   </source>
   <dest>
-    *: "Durchschnittliche Bitrate: %ld kbps"
+    *: "Durchschnittliche Bitrate:"
   </dest>
   <voice>
     *: "Durchschnittliche Bitrate"
@@ -14050,10 +14022,10 @@
   desc: playing time screen
   user: core
   <source>
-    *: "Average track size: %s"
+    *: "Average track size:"
   </source>
   <dest>
-    *: "Durchschnittliche Titelgröße: %s"
+    *: "Durchschnittliche Titelgröße:"
   </dest>
   <voice>
     *: "Durchschnittliche Titelgröße"
@@ -14084,7 +14056,7 @@
     *: "Level 6: 40 Züge / 120 min"
   </dest>
   <voice>
-    *: "Level 6: 40 Züge pro 120 Minuten"
+    *: "Level 6, 40 Züge pro 120 Minuten"
   </voice>
 </phrase>
 <phrase>
@@ -14334,7 +14306,7 @@
     *: "Level 10: 1 Zug / 600 min"
   </dest>
   <voice>
-    *: "Level 10: 1 Zug pro 600 Minuten"
+    *: "Level 10, 1 Zug pro 600 Minuten"
   </voice>
 </phrase>
 <phrase>
@@ -14404,7 +14376,7 @@
     *: "Level 8: 1 Zug / 15 min"
   </dest>
   <voice>
-    *: "Level 8: 1 Zug pro 15 Minuten"
+    *: "Level 8, 1 Zug pro 15 Minuten"
   </voice>
 </phrase>
 <phrase>
@@ -15020,16 +14992,13 @@
   desc: prefix for elapsed playtime announcement
   user: core
   <source>
-    *: none
-    hotkey: "Elapsed"
+    *: "Elapsed"
   </source>
   <dest>
-    *: none
-    hotkey: "Vergangen"
+    *: "Vergangen"
   </dest>
   <voice>
-    *: none
-    hotkey: "Vergangen"
+    *: "Vergangen"
   </voice>
 </phrase>
 <phrase>
@@ -16343,5 +16312,173 @@
   </dest>
   <voice>
     *: "Deustch"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_ERROR_FORMATSTR
+  desc: for general use
+  user: core
+  <source>
+    *: "Error: %s"
+  </source>
+  <dest>
+    *: "Fehler: %s"
+  </dest>
+  <voice>
+    *: "Fehler"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_MIKMOD_SETTINGS
+  desc: mikmod plugin
+  user: core
+  <source>
+    *: "Mikmod Settings"
+  </source>
+  <dest>
+    *: "Mikmod Einstellungen"
+  </dest>
+  <voice>
+    *: "Mik mod Einstellungen"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_MIKMOD_MENU
+  desc: mikmod plugin
+  user: core
+  <source>
+    *: "Mikmod Menu"
+  </source>
+  <dest>
+    *: "Mikmod Menü"
+  </dest>
+  <voice>
+    *: "Mik mod Menü"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_CHESSBOX_MENU
+  desc: chessbox plugin
+  user: core
+  <source>
+    *: "Chessbox Menu"
+  </source>
+  <dest>
+    *: "Schachbox Menü"
+  </dest>
+  <voice>
+    *: "Schach box Menü"
+  </voice>
+</phrase>
+<phrase>
+  id: VOICE_INVALID_VOICE_FILE
+  desc: played if the voice file fails to load
+  user: core
+  <source>
+    *: ""
+  </source>
+  <dest>
+    *: ""
+  </dest>
+  <voice>
+    *: "Ungültige Sprach Datei"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_PERCENT_FORMAT
+  desc: percent formatting ( `10%` is default ,  for `10 %` use '%ld %%' , for `%10` use '%%%ld' and so on)
+  user: core
+  <source>
+    *: "%ld%%"
+  </source>
+  <dest>
+    *: "~%ld%%"
+  </dest>
+  <voice>
+    *: none
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_DISPLAY_TITLEALBUM_FROMTAGS
+  desc: track display options
+  user: core
+  <source>
+    *: "Title & Album from ID3 tags"
+  </source>
+  <dest>
+    *: "Titel & Album von ID3 Tags"
+  </dest>
+  <voice>
+    *: "Titel und Album von Tags"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_DISPLAY_TITLE_FROMTAGS
+  desc: track display options
+  user: core
+  <source>
+    *: "Title from ID3 tags"
+  </source>
+  <dest>
+    *: "Titel von ID3 Tags"
+  </dest>
+  <voice>
+    *: "Titel von Tags"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_RANDOM_SHUFFLE_RANDOM_SELECTIVE_SONGS_SUMMARY
+  desc: a summary splash screen that appear on the database browser when you try to create a playlist from the database browser that exceeds your system limit
+  user: core
+  <source>
+    *: "Selection too big, %d random tracks will be selected"
+  </source>
+  <dest>
+    *: "Auswahl zu groß, %d zufällige Titel werden ausgewählt"
+  </dest>
+  <voice>
+    *: "Auswahl zu groß, weniger zufällige Titel werden ausgewählt"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_CHOOSE_FILE
+  desc: file_picker plugin ask user to select a file
+  user: core
+  <source>
+    *: "Choose File"
+  </source>
+  <dest>
+    *: "Datei wählen"
+  </dest>
+  <voice>
+    *: "Datei wählen"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_DISABLE_MAINMENU_SCROLLING
+  desc: Disable main menu scrolling
+  user: core
+  <source>
+    *: "Disable main menu scrolling"
+  </source>
+  <dest>
+    *: "Hauptmenü scrollen deaaktivieren"
+  </dest>
+  <voice>
+    *: "Hauptmenü scrollen deaktivieren"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_REMAINING
+  desc: Playing Time
+  user: core
+  <source>
+    *: "Remaining"
+  </source>
+  <dest>
+    *: "Verbleibend"
+  </dest>
+  <voice>
+    *: "Verbleibend"
   </voice>
 </phrase>

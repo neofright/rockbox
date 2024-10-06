@@ -64,7 +64,7 @@ int tea5767_set(int setting, int value)
             write_bytes[3] |= (1<<4) | (1<<3) | (1<<1);
 #else
             /* soft mute, stereo noise cancelling */
-            write_bytes[3] |= (1<<3) | (1<<1); 
+            write_bytes[3] |= (1<<3) | (1<<1);
 #endif
             /* sleep / standby mode */
             tea5767_set_clear(3, (1<<6), value);
@@ -171,17 +171,26 @@ int tea5767_get(int setting)
 void tea5767_init(void)
 {
 /* save binsize by only detecting presence for targets where it may be absent */
-#if defined(PHILIPS_HDD1630) || defined(PHILIPS_HDD6330)
+#if defined(PHILIPS_HDD1630) || defined(PHILIPS_HDD6330) ||\
+    defined(SAMSUNG_YH920) || defined(SAMSUNG_YH925)
     unsigned char buf[5];
     unsigned char chipid;
 
-    /* init chipid register with 0xFF in case fmradio_i2c_read fails silently */
-    buf[3] = 0xFF;
     tuner_power(true);
 
 #if defined(CONFIG_TUNER_3WIRE)
+    /* We don't have any control over the bus protocol, the only way to detect
+       presence of the tuner is to write something to it and then read bytes */
+    tea5767_set(RADIO_MUTE, 1);
     int res = fmradio_3wire_read(buf);
+    res = ((buf[0] == 0) && (buf[1] == 0) && (buf[2] == 0) && (buf[3] == 0)
+          && (buf[4] == 0)) ? -1 : 1;
+    /* clear chipid byte - we don't use it here for detection, so it should be */
+    /* set to zero, to fulfill the condition in "else" block */
+    buf[3] = 0;
 #else
+    /* init chipid register with 0xFF in case fmradio_i2c_read fails silently */
+    buf[3] = 0xFF;
     int res = fmradio_i2c_read(I2C_ADR, buf, sizeof(buf));
 #endif
 

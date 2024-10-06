@@ -8,6 +8,7 @@
 # $Id$
 #
 # Copyright (C) 2007 Jonas Häggqvist
+# Copyright (C) 2020 Solomon Peachy
 #
 # All files in this archive are subject to the GNU General Public License.
 # See the file COPYING in the source tree root for full license agreement.
@@ -87,6 +88,8 @@ my %festival_lang_map = (
 
 my %gtts_lang_map = (
     'english' => '-l en -t co.uk',  # Always first, it's the golden master
+    'bulgarian' => '-l bg',
+    'chinese-simp' => '-l zh',
     'czech' => '-l cs',
     'dansk' => '-l da',
     'deutsch' => '-l de',
@@ -95,8 +98,9 @@ my %gtts_lang_map = (
     'espanol' => '-l es',
     'francais' => '-l fr',
     'greek' => '-l el',
-    'magyar' => '-l hu',
     'italiano' => '-l it',
+    'korean' => '-l ko',
+    'magyar' => '-l hu',
     'nederlands' => '-l nl',
     'norsk' => '-l no',
     'polski' => '-l pl',
@@ -109,6 +113,8 @@ my %gtts_lang_map = (
 
 my %espeak_lang_map = (
     'english' => '-ven-gb -k 5',  # Always first, it's the golden master
+    'bulgarian' => '-vbg',
+    'chinese-simp' => '-vzh',
     'czech' => '-vcs',
     'dansk' => '-vda',
     'deutsch' => '-vde',
@@ -117,9 +123,10 @@ my %espeak_lang_map = (
     'espanol' => '-ves',
     'francais' => '-vfr-fr',
     'greek' => '-vel',
-    'magyar' => '-vhu',
     'italiano' => '-vit',
     'japanese' => '-vja',
+    'korean' => '-vko',
+    'magyar' => '-vhu',
     'nederlands' => '-vnl',
     'norsk' => '-vno',
     'polski' => '-vpl',
@@ -131,7 +138,9 @@ my %espeak_lang_map = (
     );
 
 my %piper_lang_map = (
-    'english' => 'en_GB-cori-high.onnx',  # Always first, it's the golden master
+    'english' => 'en_GB-semaine-medium.onnx',  # Always first, it's the golden master
+#    'bulgarian' => '-vbg',
+    'chinese-simp' => 'zh_CN-huayan-medium.onnx',
     'czech' => 'cs_CZ-jirka-medium.onnx',
     'dansk' => 'da_DK-talesyntese-medium.onnx',
     'deutsch' => 'de_DE-thorsten-high.onnx',
@@ -140,9 +149,10 @@ my %piper_lang_map = (
     'espanol' => 'es_ES-sharvard-medium.onnx',
     'francais' => 'fr_FR-siwis-medium.onnx',
     'greek' => 'el_GR-rapunzelina-low.onnx',
-    'magyar' => 'hu_HU-anna-medium.onnx',
     'italiano' => 'it_IT-paola-medium.onnx',
 #    'japanese' => '-vja',
+#    'korean' => '-vko',
+    'magyar' => 'hu_HU-anna-medium.onnx',
     'nederlands' => 'nl_NL-mls-medium.onnx',
     'norsk' => 'no_NO-talesyntese-medium.onnx',
     'polski' => 'pl_PL-gosia-medium.onnx',
@@ -153,7 +163,7 @@ my %piper_lang_map = (
     'turkce' => 'tr_TR-fettah-medium.onnx',
 );
 
-my $trim_thresh = 500;   # Trim silence if over this, in ms
+my $trim_thresh = 250;   # Trim silence if over this, in ms
 my $force = 0;           # Don't regenerate files already present
 
 # Initialize TTS engine. May return an object or value which will be passed
@@ -178,6 +188,10 @@ sub init_tts {
             $ret{"ttsoptions"} = "--language $festival_lang_map{$language} ";
         }
     } elsif ($tts_engine eq 'piper') {
+	if (defined($piper_lang_map{$language}) && $tts_engine_opts !~ /--model/) {
+	    die("Need PIPER_MODEL_DIR\n") if (!defined($ENV{'PIPER_MODEL_DIR'}));
+       	    $tts_engine_opts = "--model $ENV{PIPER_MODEL_DIR}/$piper_lang_map{$language} ";
+	}
 	my $cmd = "piper $tts_engine_opts --json-input";
         print("> $cmd\n") if $verbose;
 
@@ -188,10 +202,7 @@ sub init_tts {
         binmode(*CMD_IN, ':encoding(utf8)');
         binmode(*CMD_OUT, ':encoding(utf8)');
         binmode(*CMD_ERR, ':encoding(utf8)');
-	if (defined($piper_lang_map{$language}) && $tts_engine_opts !~ /--model/) {
-	    die("Need PIPER_MODEL_DIR\n") if (!defined($ENV{'PIPER_MODEL_DIR'}));
-            $ret{"ttsoptions"} = "--model $ENV{PIPER_MODEL_DIR}/$piper_lang_map{$language} ";
-        }
+
     } elsif ($tts_engine eq 'sapi') {
         my $toolsdir = dirname($0);
         my $path = `cygpath $toolsdir -a -w`;
@@ -475,11 +486,11 @@ sub generateclips {
                 # If we have a pool of snippets, see if the string exists there first
                 if (defined($ENV{'POOL'})) {
                     $pool_file = sprintf("%s/%s-%s.enc", $ENV{'POOL'},
-                                         md5_hex(Encode::encode_utf8("$voice ". $tts_object->{"name"}." $tts_engine_opts $encoder_opts")),
+                                         md5_hex(Encode::encode_utf8("$voice ". $tts_object->{"name"}." $tts_engine_opts ".$tts_object->{"ttsoptions"}." $encoder_opts")),
                                          $language);
                     if (-f $pool_file) {
                         printf("Re-using %s (%s) from pool\n", $id, $voice) if $verbose;
-                        system("touch $pool_file"); # So we know it's still being used.
+#                        system("touch $pool_file"); # So we know it's still being used.
                         copy($pool_file, $enc);
                     }
                 }
@@ -511,16 +522,17 @@ sub generateclips {
                     if (defined($ENV{'POOL'})) {
 			copy($enc, $pool_file);
                     }
-		    # Special cases
-		    if ($id eq "VOICE_INVALID_VOICE_FILE") {
-			copy ($enc, "InvalidVoice_$language.talk");
-		    }
-		    if ($id eq "VOICE_LANG_NAME") {
-			copy ($enc, "$language.lng.talk");
-		    }
-
                     unlink($wav);
                 }
+
+		# Special cases
+		if ($id eq "VOICE_INVALID_VOICE_FILE") {
+		    copy ($enc, "InvalidVoice_$language.talk");
+		}
+		if ($id eq "VOICE_LANG_NAME") {
+		    copy ($enc, "$language.lng.talk");
+	        }
+
                 $voice = "";
                 $id = "";
             }
@@ -583,16 +595,20 @@ sub gentalkclips {
             print(".");
         }
 
-        # Convert to a complete path
-        my $path = sprintf("%s/%s", $dir, $file);
-
-        $voice = $file;
-        $wav = sprintf("%s.talk.wav", $path);
-
         # Ignore dot-dirs and talk files
         if ($file eq '.' || $file eq '..' || $file =~ /\.talk$/) {
             next;
         }
+
+        $voice = $file;
+
+        # Convert some symbols to spaces
+        $voice =~ tr/_-/  /;
+
+        # Convert to a complete path
+        my $path = sprintf("%s/%s", $dir, $file);
+
+        $wav = sprintf("%s.talk.wav", $path);
 
         if ( -d $path) { # Element is a dir
 	    $enc = sprintf("%s/_dirname.talk", $path);
@@ -668,7 +684,7 @@ if ($V == 1) {
 
     printf("Generating voice\n  Target: %s\n  Language: %s\n  Encoder (options): %s (%s)\n  TTS Engine (options): %s (%s)\n  Pool directory: %s\n",
            defined($t) ? $t : "unknown",
-           $l, $e, $E, $s, $S, defined($ENV{'POOL'}) ? $ENV{'POOL'} : "<none>");
+           $l, $e, $E, $s, "$S $tts_object->{ttsoptions}", defined($ENV{'POOL'}) ? $ENV{'POOL'} : "<none>");
     generateclips($l, $t, $e, $E, $tts_object, $S, $f);
     shutdown_tts($tts_object);
     createvoice($l, $i, $f);

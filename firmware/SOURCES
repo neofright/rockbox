@@ -62,6 +62,10 @@ common/bootdata.c
 #endif
 #endif
 
+#if defined(HAVE_DEVICEDATA)
+common/devicedata.c
+#endif
+
 #ifdef HAVE_SDL
 target/hosted/sdl/button-sdl.c
 target/hosted/sdl/kernel-sdl.c
@@ -94,14 +98,12 @@ target/hosted/filesystem-unix.c
 target/hosted/filesystem-app.c
 #endif /* APPLICATION */
 
-#if defined(SAMSUNG_YPR0) || defined(SAMSUNG_YPR1)
+#if (defined(SAMSUNG_YPR0) || defined(SAMSUNG_YPR1)) && !defined(SIMULATOR)
 target/hosted/kernel-unix.c
 target/hosted/filesystem-unix.c
-#ifndef SIMULATOR
 target/hosted/lc-unix.c
 drivers/lcd-memframe.c
 target/hosted/samsungypr/lcd-ypr.c
-#endif
 target/hosted/samsungypr/gpio-ypr.c
 #if CONFIG_TUNER
 target/hosted/samsungypr/radio-ypr.c
@@ -1568,6 +1570,9 @@ target/arm/s5l8702/clocking-s5l8702.c
 target/arm/s5l8702/ipod6g/lcd-6g.c
 target/arm/s5l8702/ipod6g/lcd-asm-6g.S
 target/arm/s5l8702/ipod6g/piezo-6g.c
+target/arm/s5l8702/spi-s5l8702.c
+target/arm/s5l8702/crypto-s5l8702.c
+target/arm/s5l8702/nor-s5l8702.c
 #if 0 //TODO
 target/arm/s5l8702/postmortemstub.S
 #endif
@@ -1587,10 +1592,6 @@ target/arm/s5l8702/debug-s5l8702.c
 target/arm/s5l8702/pcm-s5l8702.c
 target/arm/s5l8702/ipod6g/audio-6g.c
 target/arm/s5l8702/ipod6g/cscodec-6g.c
-#else
-target/arm/s5l8702/spi-s5l8702.c
-target/arm/s5l8702/crypto-s5l8702.c
-target/arm/s5l8702/nor-s5l8702.c
 #endif /* BOOTLOADER */
 #endif /* IPOD_6G */
 
@@ -1649,9 +1650,9 @@ target/mips/ingenic_jz47xx/kernel-jz4760.c
 target/mips/ingenic_jz47xx/i2c-jz4760.c
 target/mips/ingenic_jz47xx/lcd-jz4760.c
 target/mips/ingenic_jz47xx/system-jz4760.c
-target/mips/ingenic_jz47xx/usb-jz4760.c
 target/mips/ingenic_jz47xx/timer-jz4760.c
 #ifndef BOOTLOADER
+target/mips/ingenic_jz47xx/usb-jz4760.c
 target/mips/ingenic_jz47xx/codec-jz4760.c
 target/mips/ingenic_jz47xx/pcm-jz4760.c
 #endif /* BOOTLOADER */
@@ -1799,6 +1800,7 @@ target/arm/samsung/yh925/backlight-yh925.c
 target/arm/samsung/yh925/lcd-yh925.c
 target/arm/samsung/yh925/lcd-as-yh925.S
 target/arm/samsung/yh925/powermgmt-yh925.c
+target/arm/samsung/fmradio-yh92x.c
 #endif /* SAMSUNG_YH925 */
 
 #ifdef SAMSUNG_YPS3

@@ -158,7 +158,7 @@ sub reduceformat($) {
 ##################
 
 if($#ARGV != 2) {
-    print "Usage: updatelang <english.lang> <otherlang> <outfile|->\n";
+    print "Usage: [ENGLISHORDER=1] updatelang <english.lang> <otherlang> <outfile|->\n";
     exit;
 }
 
@@ -402,9 +402,9 @@ foreach my $id (@langorder) {
 
 	my $sane = $lang{$id}{'dest'}{$tgt};
 	$sane =~ s/^~?(.*)/$1/;  # Strip off leading ~ if it's there as it's not a legal character otherwise
-	if ($sane =~ tr/"~//) {
+	if ($sane =~ tr/"~<>//) {
 	    # If it has suspicious characters that are not allowed
-	    $lang{$id}{'notes'} .= "### The <dest> section for '$id:$tgt' has some suspicious characters (eg '~'), please double-check!\n";
+	    $lang{$id}{'notes'} .= "### The <dest> section for '$id:$tgt' has some suspicious characters (eg \",~,<,>), please double-check!\n";
 #           print "#!! '$id:$tgt' suspicious characters\n";
 	}
     }
@@ -466,7 +466,8 @@ foreach my $id (@langorder) {
 	} elsif ($lp{$tgt} ne 'none' && $lp{$tgt} ne '' && not_ignorelist($id) && !$lang{$id}{'new'} && !$ignoredups) {
 #	    print "#!! '$id:$tgt' voice identical ('$lp{$tgt}')\n";
 	    if ($lang{$id}{'dest'}{$tgt} ne '' &&
-		$lang{$id}{'dest'}{$tgt} ne $english{$id}{'dest'}{$tgt}) {
+		$lang{$id}{'dest'}{$tgt} ne $english{$id}{'dest'}{$tgt} &&
+		$lang{$id}{'dest'}{$tgt} ne "~$english{$id}{dest}{$tgt}") {
 		$lang{$id}{'notes'} .= "### The <voice> section for '$id:$tgt' is identical to english, copying translated <dest>\n";
 		    $lang{$id}{'voice'}{$tgt} = $lang{$id}{'dest'}{$tgt};
 	    } else {
@@ -475,9 +476,9 @@ foreach my $id (@langorder) {
 	}
 	my $sane = $lang{$id}{'voice'}{$tgt};
 	$sane =~ s/^~?(.*)/$1/;  # Strip off leading ~ if it's there as it's not a legal character otherwise
-        if ($sane =~ tr/%"~//) {
-            # If it has suspicious characters that are not normally voiced..
-            $lang{$id}{'notes'} .= "### The <voice> section for '$id:$tgt' has some suspicious characters (eg '%' or '~'), please double-check!\n";
+        if ($sane =~ tr/%"~:\[\]<>{}\|//) {
+            # Suspicious characters that are not typically voiced..
+            $lang{$id}{'notes'} .= "### The <voice> section for '$id:$tgt' has some suspicious characters (eg %,\",~,:,<,>,[,],{,},|), please correct!\n";
 #            print "#!! '$id:$tgt' suspicious characters\n";
         }
 	if ($lang{$id}{'voice'}{$tgt} =~ /\.\.\./) {
@@ -501,7 +502,14 @@ foreach (@langheader) {
     print $fh $_;
 }
 
-my @finalorder = @langorder;  # TODO make configurable vs @englishorder
+my @finalorder;
+
+if ($ENV{'ENGLISHORDER'}) {
+    @finalorder = @englishorder;
+} else {
+    @finalorder = @langorder;
+}
+
 foreach my $id (@finalorder) {
     if (!defined($english{$id})) {
 	next;

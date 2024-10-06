@@ -385,9 +385,13 @@ static int calc_strength(int colour, int x, int y)
                 if(a && b) /* diagonally adjacent, give less influence */
                 {
                     score += 5;
-                    if(board[x + a][y + b].tank || board[x + a][y + b].farm)
+                    if(board[x + a][y + b].tank)
                         score += 15;
-                    if(board[x + a][y + b].plane || board[x + a][y + b].ind)
+                    if(board[x + a][y + b].farm)
+                        score += 15;
+                    if(board[x + a][y + b].plane)
+                        score += 20;
+                    if (board[x + a][y + b].ind)
                         score += 20;
                     if(board[x + a][y + b].nuke)
                         score += 10;
@@ -397,10 +401,14 @@ static int calc_strength(int colour, int x, int y)
                 else
                 {
                     score += 10;
-                    if(board[x + a][y + b].tank || board[x + a][y + b].farm)
+                    if(board[x + a][y + b].tank)
                         score += 30;
-                    if(board[x + a][y + b].plane || board[x + a][y + b].ind)
-                        score += 40;
+                    if(board[x + a][y + b].farm)
+                        score += 30;
+                    if(board[x + a][y + b].plane)
+                        score += 20;
+                    if(board[x + a][y + b].ind)
+                        score += 20;
                     if(board[x + a][y + b].nuke)
                         score += 20;
                     if(board[x + a][y + b].men)
@@ -1943,7 +1951,7 @@ static void computer_allocate(void)
     }
     if(superdom_settings.compdiff>=AI_BUILD_INDS_FARMS_LEVEL && compres.cash>=PRICE_FACTORY+100)
     {
-        int i = 0;
+        int cnt = 0;
         do
         {
             if(compres.farms<compres.inds)
@@ -1966,7 +1974,7 @@ static void computer_allocate(void)
                     break;
                 }
             }
-        } while(compres.cash>=PRICE_FACTORY + 100 && i++ < 3);
+        } while(compres.cash>=PRICE_FACTORY + 100 && cnt++ < 3);
     }
     /* AI will buy nukes first if possible */
     if(compres.cash > PRICE_NUKE + PRICE_TANK && superdom_settings.compdiff>=AI_BUILD_NUKES_LEVEL)

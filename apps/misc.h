@@ -1,10 +1,10 @@
 /***************************************************************************
- *             __________               __   ___.                  
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___  
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /  
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <   
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \  
- *                     \/            \/     \/    \/            \/ 
+ *             __________               __   ___.
+ *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
+ *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
+ *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
+ *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
+ *                     \/            \/     \/    \/            \/
  * $Id$
  *
  * Copyright (C) 2002 by Daniel Stenberg
@@ -22,6 +22,7 @@
 #define MISC_H
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <inttypes.h>
 #include "config.h"
 #include "screen_access.h"
@@ -36,7 +37,7 @@ extern const unsigned char * const unit_strings_core[];
  * voiced.*/
 char *output_dyn_value(char *buf,
                        int buf_size,
-                       int value,
+                       int64_t value,
                        const unsigned char * const *units,
                        unsigned int unit_count,
                        bool binary_scale);
@@ -110,12 +111,12 @@ void talk_timedate(void);
  * returns true if the playlist should be replaced */
 bool warn_on_pl_erase(void);
 
-bool show_search_progress(bool init, int count);
+bool show_search_progress(bool init, int count, int current, int total);
 
 /* Read (up to) a line of text from fd into buffer and return number of bytes
- * read (which may be larger than the number of bytes stored in buffer). If 
- * an error occurs, -1 is returned (and buffer contains whatever could be 
- * read). A line is terminated by a LF char. Neither LF nor CR chars are 
+ * read (which may be larger than the number of bytes stored in buffer). If
+ * an error occurs, -1 is returned (and buffer contains whatever could be
+ * read). A line is terminated by a LF char. Neither LF nor CR chars are
  * stored in buffer.
  */
 int read_line(int fd, char* buffer, int buffer_size);
@@ -276,5 +277,9 @@ long to_normalized_volume(long vol, long min_vol, long max_vol, long max_norm);
 /* Inverse of to_normalized_volume(), returns the volume in tenth dB
  * for the given normalized volume. */
 long from_normalized_volume(long norm, long min_vol, long max_vol, long max_norm);
+
+/* clear the lcd output buffer, if update is true the cleared buffer
+ * will be written to the lcd */
+void clear_screen_buffer(bool update);
 
 #endif /* MISC_H */
