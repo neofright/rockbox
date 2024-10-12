@@ -1120,12 +1120,12 @@ const struct settings_list settings[] = {
     SYSTEM_SETTING(NVRAM(4), topruntime, 0),
     INT_SETTING(F_BANFROMQS, max_files_in_playlist,
                 LANG_MAX_FILES_IN_PLAYLIST,
-#if CONFIG_CPU == PP5002 || CONFIG_CPU == PP5020 || CONFIG_CPU == PP5022
+#if CONFIG_CPU == PP5002 || CONFIG_CPU == PP5020
                   /** Slow CPU benefits greatly from building smaller playlists 
                   On the iPod Mini 2nd gen, creating a playlist of 2000 entries takes around 10 seconds */
                   2000,
 #elif MEMORYSIZE > 1
-                  10000,
+                  99999,
 #else
                   400,
 #endif
