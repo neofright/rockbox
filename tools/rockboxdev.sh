@@ -14,11 +14,15 @@ if [ "$system" == "Darwin" ]; then
     READLINK=greadlink
     TMP="$TMPDIR"
     SED=gsed
+    mpfr_version="4.1.0"
+    mpc_version="1.2.1"
 else
     READLINK=readlink
     parallel=`nproc`
     TMP=/tmp
     SED=sed
+    mpfr_version="3.1.6"
+    mpc_version="1.0.1"
 fi
 
 # this is where this script will store downloaded files and check for already
@@ -491,16 +495,16 @@ build() {
 
         if (echo $needs_libs | grep -q mpfr && test ! -d mpfr); then
             echo "ROCKBOXDEV: Getting MPFR"
-            getfile "mpfr-3.1.6.tar.xz" "$GNU_MIRROR/mpfr"
-            tar xJf $dlwhere/mpfr-3.1.6.tar.xz
-            ln -s mpfr-3.1.6 mpfr
+            getfile "mpfr-$mpfr_version.tar.xz" "$GNU_MIRROR/mpfr"
+            tar xJf $dlwhere/mpfr-$mpfr_version.tar.xz
+            ln -s mpfr-$mpfr_version mpfr
         fi
 
         if (echo $needs_libs | grep -q mpc && test ! -d mpc); then
             echo "ROCKBOXDEV: Getting MPC"
-            getfile "mpc-1.0.1.tar.gz" "http://www.multiprecision.org/downloads"
-            tar xzf $dlwhere/mpc-1.0.1.tar.gz
-            ln -s mpc-1.0.1 mpc
+            getfile "mpc-$mpc_version.tar.gz" "http://www.multiprecision.org/downloads"
+            tar xzf $dlwhere/mpc-$mpc_version.tar.gz
+            ln -s mpc-$mpc_version mpc
         fi
 
         if (echo $needs_libs | grep -q isl && test ! -d isl); then
