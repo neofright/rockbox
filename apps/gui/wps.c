@@ -615,7 +615,12 @@ static long do_wps_exit(long action, bool bookmark)
     audio_pause();
     update_non_static();
     if (bookmark)
-        bookmark_autobookmark(true);
+    {
+        if(!strstr(get_wps_state()->id3->path, "Music"))
+        {
+            bookmark_autobookmark(true);
+        }
+    }
     audio_stop();
 
     ab_reset_markers();
